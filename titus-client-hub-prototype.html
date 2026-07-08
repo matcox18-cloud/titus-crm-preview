@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Titus CPAs — Client Hub (Prototype)</title>
+<style>
+  :root{ color-scheme:light; --navy:#132b49; --navy2:#1d3c63; --gold:#d1af44; --ink:#26303c; --muted:#6b7686; --line:#e7e1d3; --card:#ffffff; --bg:#f7f2e9; --green:#2f9e74; --amber:#c9803a; --red:#c0533f; }
+  *{ box-sizing:border-box; } html,body{ margin:0; }
+  body{ background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; line-height:1.45; }
+  .serif{ font-family:Georgia,"Times New Roman",serif; }
+  .top{ background:var(--navy); color:#fff; padding:0 22px; display:flex; align-items:center; gap:18px; position:sticky; top:0; z-index:10; }
+  .top .brand{ font-size:13px; letter-spacing:2.5px; font-weight:700; padding:14px 0; } .top .brand b{ color:var(--gold); }
+  .tabs{ display:flex; gap:4px; margin-left:6px; }
+  .tab{ background:none; border:none; color:#b9c4d4; font-size:13.5px; font-weight:600; padding:16px 14px; cursor:pointer; border-bottom:2.5px solid transparent; }
+  .tab.on{ color:#fff; border-bottom-color:var(--gold); }
+  .top .proto{ margin-left:auto; font-size:11px; font-weight:700; letter-spacing:.5px; background:rgba(209,175,68,.18); color:var(--gold); border:1px solid rgba(209,175,68,.4); border-radius:20px; padding:4px 11px; }
+  .wrap{ max-width:1120px; margin:20px auto; padding:0 22px 55px; }
+  h2.page{ font-family:Georgia,serif; color:var(--navy); font-size:22px; margin:2px 0 2px; }
+  .psub{ color:var(--muted); font-size:13.5px; margin:0 0 16px; }
+  .kpis{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:16px; }
+  .kpi{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:13px 15px; }
+  .kpi .n{ font-family:Georgia,serif; font-size:23px; color:var(--navy); font-weight:700; } .kpi .l{ font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-top:2px; }
+  @media(max-width:820px){ .kpis{ grid-template-columns:repeat(2,1fr); } }
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; } @media(max-width:820px){ .grid{ grid-template-columns:1fr; } }
+  .panel{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px; margin-bottom:16px; }
+  .panel h3{ font-size:13px; color:var(--navy); margin:0; font-weight:700; } .panel .ph{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px; } .panel .hint{ font-size:11.5px; color:var(--muted); }
+  .bar-row{ display:flex; align-items:center; gap:10px; margin:9px 0; font-size:13px; } .bar-row .lab{ width:120px; flex:none; color:var(--navy); font-weight:600; }
+  .bar{ flex:1; background:#f0ece1; border-radius:6px; height:18px; overflow:hidden; } .bar span{ display:block; height:100%; border-radius:6px; } .bar-row .val{ width:132px; flex:none; text-align:right; color:var(--muted); font-size:12.5px; }
+  .mini{ display:flex; align-items:center; gap:11px; padding:9px 0; border-bottom:1px solid #f0ece1; } .mini:last-child{ border-bottom:none; }
+  .av{ width:34px; height:34px; border-radius:9px; background:var(--navy); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex:none; } .av.gold{ background:var(--gold); color:var(--navy); } .av.sm{ width:30px; height:30px; font-size:11px; } .av.lg{ width:46px; height:46px; font-size:15px; border-radius:11px; }
+  .mini .mm{ flex:1; } .mini .nm{ font-weight:600; color:var(--navy); font-size:13.5px; } .mini .sub{ font-size:12px; color:var(--muted); } .mini .end{ text-align:right; font-size:12px; color:var(--muted); }
+  .tagr{ font-size:11px; font-weight:700; border-radius:20px; padding:2px 8px; }
+  .hd{ width:9px; height:9px; border-radius:50%; flex:none; display:inline-block; } .hd.green{ background:var(--green);} .hd.amber{ background:var(--amber);} .hd.red{ background:var(--red);}
+  .pstat{ display:flex; gap:10px; flex-wrap:wrap; } .pcard{ flex:1; min-width:110px; border:1px solid var(--line); border-radius:11px; padding:12px; text-align:center; } .pcard .n{ font-family:Georgia,serif; font-size:20px; font-weight:700; } .pcard .l{ font-size:11px; color:var(--muted); margin-top:2px; }
+  /* client cards */
+  .search{ width:100%; max-width:420px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:#fff; font-size:14px; margin-bottom:14px; } .search:focus{ outline:none; border-color:var(--gold); }
+  .cards{ display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px; }
+  .ccard{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; cursor:pointer; transition:border-color .15s, box-shadow .15s, transform .05s; }
+  .ccard:hover{ border-color:#cdbf9a; box-shadow:0 3px 12px rgba(19,43,73,.08); }
+  .ccard:active{ transform:translateY(1px); }
+  .ccard .ct{ display:flex; align-items:center; gap:11px; }
+  .ccard .nm{ font-weight:700; color:var(--navy); font-size:16px; } .ccard .sub{ font-size:12.5px; color:var(--muted); margin-top:1px; }
+  .ccard .stats{ display:flex; gap:16px; margin-top:13px; padding-top:13px; border-top:1px solid #f0ece1; }
+  .ccard .st .v{ font-weight:700; color:var(--navy); font-size:14px; } .ccard .st .l{ font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; }
+  .ccard .foot{ display:flex; align-items:center; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .open{ margin-left:auto; font-size:12px; color:#2f6db0; font-weight:600; }
+  .tier{ font-size:10.5px; font-weight:700; border-radius:20px; padding:2px 8px; } .tier.I{ background:#eef4ea; color:#2f6b45;} .tier.II{ background:#eef2f8; color:#2f5aa0;} .tier.III{ background:#f3f1ec; color:#8a7a4e;}
+  .chip{ font-size:11px; color:var(--muted); background:#f4efe4; border-radius:20px; padding:2px 8px; }
+  /* record */
+  .back{ background:none; border:none; color:#2f6db0; font-size:13.5px; font-weight:600; cursor:pointer; padding:4px 0; margin-bottom:10px; }
+  .record{ background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; }
+  .dhead{ background:var(--navy); color:#fff; padding:20px 22px; display:flex; align-items:center; gap:14px; }
+  .dhead .nm{ font-size:24px; font-weight:700; } .dhead .row{ display:flex; align-items:center; gap:9px; margin-top:9px; flex-wrap:wrap; font-size:12.5px; }
+  .dhead .pill{ background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2); border-radius:20px; padding:3px 10px; color:#fff; font-weight:600; }
+  .statline{ display:flex; flex-wrap:wrap; border-bottom:1px solid var(--line); }
+  .stat{ flex:1; min-width:120px; padding:13px 16px; border-right:1px solid var(--line); } .stat:last-child{ border-right:none; }
+  .stat .l{ font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); font-weight:700; } .stat .v{ font-size:15px; color:var(--navy); font-weight:700; font-family:Georgia,serif; margin-top:3px; } .stat .v.sm{ font-size:13px; font-family:inherit; font-weight:600; }
+  .dbody{ padding:18px 22px 22px; }
+  .sect{ margin-bottom:20px; } .sect h3{ font-size:12px; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); margin:0 0 10px; font-weight:700; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; } @media(max-width:640px){ .row2{ grid-template-columns:1fr; } }
+  .box{ border:1px solid var(--line); border-radius:11px; padding:12px 13px; }
+  .person{ display:flex; align-items:center; gap:11px; padding:9px 0; border-bottom:1px solid #f0ece1; } .person:last-child{ border-bottom:none; }
+  .person .pn{ font-weight:600; color:var(--navy); font-size:13.5px; } .person .pr{ font-size:12px; color:var(--muted); }
+  .ent{ display:flex; align-items:flex-start; gap:11px; padding:11px 0; border-bottom:1px solid #f0ece1; } .ent:last-child{ border-bottom:none; }
+  .ent .en{ font-weight:600; color:var(--navy); font-size:14px; } .ent .es{ font-size:12px; color:var(--muted); } .etype{ font-size:10.5px; font-weight:700; color:#5a6675; background:#f1f0ea; border-radius:6px; padding:2px 7px; margin-left:auto; white-space:nowrap; }
+  .kd{ display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px dashed #eee5cf; font-size:13px; } .kd:last-child{ border-bottom:none; } .kd .dt{ color:var(--muted); font-weight:600; } .kd.soon .dt{ color:var(--amber); }
+  .eng{ display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid #f0ece1; font-size:13px; } .eng:last-child{ border-bottom:none; font-weight:700; color:var(--navy); }
+  .services{ display:flex; flex-wrap:wrap; gap:6px; } .svc{ font-size:11.5px; background:#eef2f8; color:#2f5aa0; border-radius:20px; padding:3px 10px; font-weight:600; }
+  .ms{ position:relative; padding-left:20px; } .ms::before{ content:''; position:absolute; left:5px; top:4px; bottom:4px; width:2px; background:#ece3cb; } .ms .m{ position:relative; padding:4px 0 12px; } .ms .m::before{ content:''; position:absolute; left:-18px; top:6px; width:10px; height:10px; border-radius:50%; background:var(--gold); border:2px solid #fff; box-shadow:0 0 0 1px var(--gold); } .ms .md{ font-size:11px; color:var(--muted); } .ms .ml{ font-size:13.5px; font-weight:600; color:var(--navy); }
+  .tl .t{ display:flex; gap:11px; padding:9px 0; border-bottom:1px solid #f0ece1; } .tl .t:last-child{ border-bottom:none; } .tl .tt{ font-size:10.5px; font-weight:700; color:#fff; background:var(--navy2); border-radius:6px; padding:2px 7px; height:fit-content; white-space:nowrap; } .tl .tn{ font-size:13.5px; } .tl .tm{ font-size:11.5px; color:var(--muted); margin-top:1px; }
+  .nextbox{ background:#fbf6e8; border:1px solid #ecdfb4; border-radius:11px; padding:13px 14px; } .nextbox .l{ font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:#a8862a; font-weight:700; } .nextbox .a{ font-weight:600; font-size:14px; margin-top:3px; } .nextbox .d{ font-size:12px; color:var(--muted); margin-top:2px; }
+  .notes{ font-size:13.5px; color:#3f4751; white-space:pre-line; }
+  .portal{ font-size:11px; font-weight:700; border-radius:20px; padding:2px 9px; } .portal.Active{ background:#eef4ea; color:#2f6b45; } .portal.Invited{ background:#fbf3e2; color:#a8722a; } .portal.None{ background:#f4eeee; color:#9a5a4e; }
+  .summary-card{ border:1px solid #e6dcbd; background:linear-gradient(180deg,#fffdf5,#fff); border-radius:12px; padding:15px 17px; }
+  .summary-card p{ font-size:13.5px; color:#37414d; margin:11px 0 0; }
+  .ai-badge{ display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:800; letter-spacing:.3px; color:#8a6d16; background:#fbf1d4; border:1px solid #ecdba0; border-radius:20px; padding:3px 10px; }
+  .regen{ font-size:12px; color:#2f6db0; background:none; border:none; cursor:pointer; font-weight:600; padding:0; }
+  .interests{ display:flex; flex-wrap:wrap; gap:6px; margin-top:13px; }
+  .int{ font-size:11.5px; background:#f1ece0; color:#6b5a2a; border-radius:20px; padding:3px 10px; font-weight:600; }
+  .map{ display:flex; gap:14px; flex-wrap:wrap; margin-top:14px; padding-top:13px; border-top:1px dashed #eadfbf; }
+  .mapcol{ flex:1; min-width:150px; } .mapcol .mt{ font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); font-weight:700; margin-bottom:6px; }
+  .node{ font-size:12.5px; background:#fff; border:1px solid var(--line); border-radius:8px; padding:6px 10px; margin-bottom:6px; color:var(--navy); font-weight:600; } .node .s{ font-weight:400; color:var(--muted); font-size:11px; }
+  .caveat{ font-size:11px; color:var(--muted); margin-top:13px; }
+  .ahead{ display:flex; gap:10px; padding:8px 0; border-bottom:1px solid #f0ece1; align-items:flex-start; } .ahead:last-child{ border-bottom:none; }
+  .acat{ font-size:10px; font-weight:700; border-radius:6px; padding:2px 7px; height:fit-content; white-space:nowrap; flex:none; }
+  .al{ font-size:13.5px; font-weight:600; color:var(--navy); } .aw{ font-size:11.5px; color:var(--muted); font-weight:400; margin-top:1px; }
+  .email-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; } @media(max-width:900px){ .email-grid{ grid-template-columns:1fr; } }
+  .seg-filters{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; } .seg-filters select{ padding:8px 10px; border:1px solid var(--line); border-radius:9px; background:#fff; font-size:13px; }
+  .count-big{ font-family:Georgia,serif; font-size:34px; color:var(--navy); font-weight:700; }
+  .saved{ display:flex; flex-wrap:wrap; gap:7px; } .savedchip{ font-size:12px; border:1px solid var(--line); background:#fff; border-radius:20px; padding:5px 11px; cursor:pointer; color:var(--navy); font-weight:600; } .savedchip:hover{ border-color:var(--gold); }
+  .btn{ background:var(--navy); color:#fff; border:none; border-radius:9px; padding:9px 15px; font-size:13px; font-weight:600; cursor:pointer; } .btn.gold{ background:var(--gold); color:var(--navy); } .btn.ghost{ background:#fff; color:var(--navy); border:1px solid var(--line); }
+  .field label{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--muted); display:block; margin-bottom:5px; } .field input,.field select{ width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:9px; background:#fff; font-size:13.5px; } .field input:focus,.field select:focus{ outline:none; border-color:var(--gold); }
+  .mail{ border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#fff; }
+  .mail .mh{ background:var(--navy); color:#fff; text-align:center; padding:18px; border-bottom:3px solid var(--gold); } .mail .mh .b{ font-size:14px; letter-spacing:2.5px; font-weight:700; } .mail .mh .b span{ color:var(--gold); }
+  .mail .mb{ padding:20px; } .mail .mt{ font-family:Georgia,serif; font-size:19px; color:var(--navy); margin:0 0 10px; } .mail .mb p{ font-size:13.5px; color:#3f4751; margin:0 0 12px; }
+  .mail .cta{ display:inline-block; background:var(--gold); color:var(--navy); font-weight:700; font-size:13px; padding:10px 18px; border-radius:8px; }
+  .mail .mf{ border-top:1px solid var(--line); padding:14px 20px; font-size:11px; color:var(--muted); text-align:center; line-height:1.6; } .mail .mf a{ color:#2f6db0; }
+  .tbl{ width:100%; border-collapse:collapse; } .tbl th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--muted); padding:8px 10px; border-bottom:1px solid var(--line); } .tbl td{ padding:9px 10px; border-bottom:1px solid #f0ece1; font-size:13px; }
+  .auto{ display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid #f0ece1; } .auto:last-child{ border-bottom:none; } .auto .an{ font-weight:600; color:var(--navy); font-size:13.5px; } .auto .ad{ font-size:12px; color:var(--muted); }
+  .sw{ width:38px; height:22px; border-radius:20px; background:#cfd6df; position:relative; flex:none; cursor:pointer; } .sw.on{ background:var(--green); } .sw::after{ content:''; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#fff; transition:left .15s; } .sw.on::after{ left:18px; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="brand">TITUS <b>CPAs</b></div>
+    <div class="tabs"><button class="tab on" data-view="dashboard">Dashboard</button><button class="tab" data-view="clients">Clients</button><button class="tab" data-view="email">Email</button></div>
+    <div class="proto">PROTOTYPE · sample data</div>
+  </div>
+  <div class="wrap" id="wrap"></div>
+
+<script>
+const TODAY = new Date(2026,6,8);
+const REL = [
+  { id:1, name:"Whitfield Family & Companies", tier:"I", owner:"Mat Cox", health:"green", industry:"Logistics / Transportation",
+    fees:42000, revenue:"~$6.0M", referral:"Dale Roberts (client)", portal:"Active", docCount:24,
+    contact:{name:"Marcus Whitfield", role:"Owner / CEO", email:"marcus@whitfieldlog.com", phone:"(205) 555-0142"},
+    people:[ {name:"Marcus Whitfield", role:"Owner / CEO", bday:"Mar 14", email:"marcus@whitfieldlog.com", phone:"(205) 555-0142"},
+      {name:"Dana Whitfield", role:"Spouse · joint 1040", bday:"Jun 9", email:"dana.w@gmail.com", phone:"(205) 555-0143"} ],
+    birthday:{m:3,d:14}, since:"Jun 2026", lastTouch:{date:"Jul 2, 2026", note:"Monthly CAS review — margins up 3 pts."},
+    services:["Monthly CAS","Business Tax (1120-S)","Personal 1040","Advisory"],
+    engagements:[ {name:"Monthly CAS", fee:24000}, {name:"Business Tax (1120-S / 1065)", fee:9000}, {name:"Personal 1040", fee:3000}, {name:"Advisory", fee:6000} ],
+    entities:[ {name:"Whitfield Logistics, LLC", type:"S-Corp", note:"Operating co · ~$6M rev · FYE 12/31"},
+      {name:"Whitfield Real Estate Holdings, LLC", type:"Partnership", note:"Warehouse + yard · 1065"},
+      {name:"Marcus & Dana Whitfield", type:"1040", note:"Joint personal return"} ],
+    keyDates:[ {label:"Q3 estimate", date:"Sep 15, 2026"}, {label:"S-Corp return (1120-S)", date:"Mar 15, 2027"}, {label:"Partnership return (1065)", date:"Mar 15, 2027"}, {label:"Personal 1040", date:"Apr 15, 2027"} ],
+    milestones:[ {date:"Jul 2026", label:"First monthly CAS close delivered"}, {date:"Jun 2026", label:"Onboarded · engagement signed"}, {date:"May 2026", label:"Won — Tier I anchor package"} ],
+    notes:"Referred by Dale Roberts. Growing fast (22 employees). Interested in a profitability dashboard and eventual exit planning. Prefers a monthly standing call — keep it consultative.",
+    timeline:[ {type:"Call", date:"Jul 2, 2026", by:"Mat Cox", note:"Monthly CAS review. Margins + cash. Happy."}, {type:"Email", date:"Jun 20, 2026", by:"Mat Cox", note:"Sent June financial package."}, {type:"Milestone", date:"Jun 11, 2026", by:"Mat Cox", note:"Engagement executed."} ],
+    nextStep:{action:"Schedule Q3 tax-planning session", due:"Aug 20, 2026"} },
+
+  { id:2, name:"Anand Dental Group", tier:"I", owner:"Sam Bellman", health:"amber", industry:"Dental / Healthcare",
+    fees:28000, revenue:"~$4.5M", referral:"Regions Bank — J. Tolbert", portal:"Active", docCount:12,
+    contact:{name:"Dr. Priya Anand", role:"Owner / Dentist", email:"priya@ananddental.com", phone:"(205) 555-0188"},
+    people:[ {name:"Dr. Priya Anand", role:"Owner / Dentist", bday:"Aug 2", email:"priya@ananddental.com", phone:"(205) 555-0188"},
+      {name:"Raj Anand", role:"Spouse · joint 1040", bday:"Oct 18", email:"raj.anand@gmail.com", phone:"(205) 555-0189"} ],
+    birthday:{m:8,d:2}, since:"Jun 2026", lastTouch:{date:"Jun 24, 2026", note:"Left VM re: expansion financing."},
+    services:["CAS","Practice Advisory","Business Tax","Personal 1040"],
+    engagements:[ {name:"CAS (bookkeeping + close)", fee:15000}, {name:"Practice Advisory", fee:6000}, {name:"Business Tax", fee:5000}, {name:"Personal 1040", fee:2000} ],
+    entities:[ {name:"Anand Dental Group, PC", type:"S-Corp", note:"Two locations, third planned"}, {name:"Anand Property, LLC", type:"Partnership", note:"Owns the Vestavia office building"}, {name:"Priya & Raj Anand", type:"1040", note:"Joint personal return"} ],
+    keyDates:[ {label:"Q3 estimate", date:"Sep 15, 2026"}, {label:"S-Corp return (1120-S)", date:"Mar 15, 2027"}, {label:"Personal 1040", date:"Apr 15, 2027"} ],
+    milestones:[ {date:"Jun 2026", label:"Onboarded · CAS + advisory"}, {date:"Jun 2026", label:"Won — practice profitability package"} ],
+    notes:"Switched to us for responsiveness — that's the whole relationship. Planning a third location; will need a financing package. FLAG: no reply to last outreach — follow up this week.",
+    timeline:[ {type:"Call", date:"Jun 24, 2026", by:"Sam Bellman", note:"Left voicemail on expansion financing."}, {type:"Meeting", date:"Jun 12, 2026", by:"Sam Bellman", note:"Kickoff. Mapped two entities + personal."} ],
+    nextStep:{action:"Follow up on expansion financing questions", due:"Jul 10, 2026"} },
+
+  { id:3, name:"Crews Custom Homes", tier:"I", owner:"Hudson Pitts", health:"green", industry:"Construction / Homebuilding",
+    fees:36000, revenue:"~$8.0M", referral:"ABC Homebuilders mixer", portal:"Active", docCount:18,
+    contact:{name:"Daniel Crews", role:"Owner / Builder", email:"dan@crewshomes.com", phone:"(205) 555-0210"},
+    people:[ {name:"Daniel Crews", role:"Owner / Builder", bday:"Nov 20", email:"dan@crewshomes.com", phone:"(205) 555-0210"} ],
+    birthday:{m:11,d:20}, since:"Jun 2026", lastTouch:{date:"Jun 28, 2026", note:"Reviewed WIP schedule for bonding."},
+    services:["Construction Accounting","WIP / Job Costing","Business Tax","Bonding Support"],
+    engagements:[ {name:"Construction Accounting", fee:20000}, {name:"WIP / Job Costing", fee:8000}, {name:"Business Tax", fee:6000}, {name:"Personal 1040", fee:2000} ],
+    entities:[ {name:"Crews Custom Homes, Inc.", type:"S-Corp", note:"GC · percentage-of-completion"}, {name:"Crews Land, LLC", type:"Partnership", note:"Lot inventory holding co"}, {name:"Daniel Crews", type:"1040", note:"Personal return"} ],
+    keyDates:[ {label:"Bonding financials due", date:"Aug 1, 2026"}, {label:"S-Corp return (1120-S)", date:"Mar 15, 2027"}, {label:"Personal 1040", date:"Apr 15, 2027"} ],
+    milestones:[ {date:"Jun 2026", label:"Onboarded · construction accounting"}, {date:"Jun 2026", label:"Won at scope meeting"} ],
+    notes:"Needs clean WIP schedules for the bonding company — the key value driver. Two entities, growing. Good quarterly-advisory candidate once cycle settles.",
+    timeline:[ {type:"Meeting", date:"Jun 28, 2026", by:"Hudson Pitts", note:"WIP + bonding review at job site."}, {type:"Milestone", date:"Jun 15, 2026", by:"Hudson Pitts", note:"Engagement signed."} ],
+    nextStep:{action:"Deliver bonding financial package", due:"Jul 28, 2026"} },
+
+  { id:4, name:"Foster & Sons HVAC", tier:"I", owner:"Sam Bellman", health:"green", industry:"HVAC / Home Services",
+    fees:31000, revenue:"$3.2M", referral:"Google search", portal:"Invited", docCount:9,
+    contact:{name:"Gerald Foster", role:"Owner", email:"gerald@fosterhvac.com", phone:"(205) 555-0277"},
+    people:[ {name:"Gerald Foster", role:"Owner", bday:"Jul 12", email:"gerald@fosterhvac.com", phone:"(205) 555-0277"},
+      {name:"Marie Foster", role:"Spouse · joint 1040", bday:"Dec 3", email:"marie.foster@gmail.com", phone:"(205) 555-0278"} ],
+    birthday:{m:7,d:12}, since:"Jun 2026", lastTouch:{date:"Jun 26, 2026", note:"Needs-assessment scheduled."},
+    services:["CAS","Business Tax","Estate & Trust","Personal 1040"],
+    engagements:[ {name:"CAS", fee:16000}, {name:"Business Tax", fee:8000}, {name:"Estate & Trust (1041)", fee:5000}, {name:"Personal 1040", fee:2000} ],
+    entities:[ {name:"Foster & Sons HVAC, LLC", type:"S-Corp", note:"~$3.2M rev, family-owned"}, {name:"Foster Family Trust", type:"Trust (1041)", note:"Succession planning vehicle"}, {name:"Gerald & Marie Foster", type:"1040", note:"Joint personal return"} ],
+    keyDates:[ {label:"S-Corp return (1120-S)", date:"Mar 15, 2027"}, {label:"Trust return (1041)", date:"Apr 15, 2027"}, {label:"Personal 1040", date:"Apr 15, 2027"} ],
+    milestones:[ {date:"Jun 2026", label:"Onboarded"}, {date:"Jun 2026", label:"Won — full-service relationship"} ],
+    notes:"Second-generation business; succession is top of mind (the trust). Strong estate-planning + advisory opportunity. Treat the whole family picture together.",
+    timeline:[ {type:"Call", date:"Jun 26, 2026", by:"Sam Bellman", note:"Discovery. $3.2M rev, wants advisory."}, {type:"Email", date:"Jun 18, 2026", by:"Sam Bellman", note:"Sent engagement + organizer."} ],
+    nextStep:{action:"Introduce estate & succession planning review", due:"Sep 5, 2026"} },
+
+  { id:5, name:"Tran Family Holdings", tier:"II", owner:"Hudson Pitts", health:"green", industry:"Real Estate / Rentals",
+    fees:9500, revenue:"~$180k (rentals)", referral:"Crews Custom Homes (client)", portal:"Invited", docCount:6,
+    contact:{name:"Rebecca Tran", role:"Owner / Investor", email:"rebecca.tran@gmail.com", phone:"(205) 555-0233"},
+    people:[ {name:"Rebecca Tran", role:"Owner / Investor", bday:"Sep 5", email:"rebecca.tran@gmail.com", phone:"(205) 555-0233"} ],
+    birthday:{m:9,d:5}, since:"Jun 2026", lastTouch:{date:"Jun 30, 2026", note:"Sent personal + entity organizer."},
+    services:["Personal 1040","Rental / Schedule E","Entity Bookkeeping"],
+    engagements:[ {name:"Rental / Schedule E", fee:4000}, {name:"Entity Bookkeeping", fee:4000}, {name:"Personal 1040", fee:1500} ],
+    entities:[ {name:"Tran Rentals, LLC", type:"Partnership", note:"3 residential rentals"}, {name:"Rebecca Tran", type:"1040", note:"W-2 + rental income"} ],
+    keyDates:[ {label:"Partnership return (1065)", date:"Mar 15, 2027"}, {label:"Personal 1040", date:"Apr 15, 2027"} ],
+    milestones:[ {date:"Jun 2026", label:"Onboarded — Tier II"}, {date:"May 2026", label:"Referred by Crews Custom Homes"} ],
+    notes:"Growing real-estate portfolio — clear path to Tier I as doors are added. Watch for the moment to propose an advisory upgrade.",
+    timeline:[ {type:"Email", date:"Jun 30, 2026", by:"Hudson Pitts", note:"Sent personal + entity organizer."}, {type:"Call", date:"Jun 7, 2026", by:"Hudson Pitts", note:"Rental LLC + W-2. Portfolio growing."} ],
+    nextStep:{action:"Check in as portfolio grows — advisory upsell", due:"Oct 1, 2026"} },
+
+  { id:6, name:"Karen Sloan", tier:"III", owner:"Hudson Pitts", health:"green", industry:"Individual",
+    fees:1200, revenue:"—", referral:"Website", portal:"None", docCount:2,
+    contact:{name:"Karen Sloan", role:"Individual", email:"karen.sloan@gmail.com", phone:"(205) 555-0412"},
+    people:[ {name:"Karen Sloan", role:"Individual", bday:"Jan 22", email:"karen.sloan@gmail.com", phone:"(205) 555-0412"} ],
+    birthday:{m:1,d:22}, since:"Jun 2026", lastTouch:{date:"Jun 10, 2026", note:"Engagement signed — simple 1040."},
+    services:["Personal 1040"],
+    engagements:[ {name:"Personal 1040", fee:1200} ],
+    entities:[ {name:"Karen Sloan", type:"1040", note:"Straightforward individual return"} ],
+    keyDates:[ {label:"Personal 1040", date:"Apr 15, 2027"} ],
+    milestones:[ {date:"Jun 2026", label:"Won — Tier III engagement ($1,200)"} ],
+    notes:"Simple personal return — low-touch. Great candidate for the automated newsletter + a light annual check-in to keep the relationship warm.",
+    timeline:[ {type:"Milestone", date:"Jun 10, 2026", by:"Hudson Pitts", note:"Accepted Tier III engagement."}, {type:"Email", date:"May 9, 2026", by:"Hudson Pitts", note:"Inbound — simple 1040."} ],
+    nextStep:{action:"Send welcome + add to client newsletter", due:"Jul 15, 2026"} }
+];
+
+// AI-style enrichment summaries (in production: web/enrichment sources + LLM, human-reviewed with citations).
+const ENRICH = {
+  1:{ interests:["Auburn football","Offshore fishing","Trucking association","Exit planning (future)"],
+    summary:`Marcus Whitfield is the founder and CEO of Whitfield Logistics, a regional freight and warehousing company he has built to roughly $6M in revenue and 22 employees. The household is a classic operating-business-plus-real-estate structure: Marcus and his wife Dana file jointly, while the family separately holds Whitfield Real Estate Holdings, which owns the warehouse and yard the logistics business operates from. He came aboard in mid-2026 as a Tier I anchor on a referral from long-time client Dale Roberts, after outgrowing his previous bookkeeper.
+
+Marcus is a hands-on, growth-minded operator who values a monthly standing call and thinks in terms of margin and cash — recent reviews show margins trending up about three points. There is a clear advisory runway: he has asked about a profitability dashboard and, down the road, exit and succession planning. Away from the business he is an Auburn football booster and offshore-fishing enthusiast who stays active in the regional trucking association. The through-line for this relationship is to stay consultative — responsiveness and proactive advice are what he is here for.` },
+  2:{ interests:["Marathon running","Dental study clubs","Mentoring dentists","Practice expansion"],
+    summary:`Dr. Priya Anand owns Anand Dental Group, a two-location dental practice (organized as a PC) generating about $4.5M, with a third location in the works. The family also holds Anand Property, LLC, which owns the Vestavia office building the practice occupies, and Priya files jointly with her husband Raj. She joined the firm in mid-2026 on a referral from Regions Bank's J. Tolbert, having switched primarily because her prior CPA was unresponsive.
+
+Priya is expansion-focused and will need a financing package to support the third location — a natural advisory and practice-profitability opportunity. She responds to fast, proactive service, so responsiveness is essentially the whole relationship. Personally she is a marathon runner active in dental study clubs who mentors newer dentists. Note: she has not replied to the last outreach on financing, so this relationship is currently flagged for a prompt follow-up.` },
+  3:{ interests:["Bass fishing","College baseball","Homebuilders Association","Bonding / growth"],
+    summary:`Daniel Crews owns Crews Custom Homes, a custom-home general contractor doing roughly $8M in volume, organized as an S-corp with a companion entity, Crews Land, LLC, that holds lot inventory. He came aboard in mid-2026 after meeting the team at a homebuilders' mixer — a strong fit given the firm's construction-accounting depth.
+
+The core value driver for Daniel is clean WIP (work-in-process) schedules for his bonding company, which gate his ability to take on larger projects; the relationship is anchored on getting bonding financials right and on time. As the build cycle settles he is a good candidate for quarterly advisory. Outside work he is into bass fishing and college baseball and sits on the local Homebuilders Association board — a useful referral network.` },
+  4:{ interests:["Classic cars","Church leadership","Grandkids' sports","Succession planning"],
+    summary:`Gerald Foster runs Foster & Sons HVAC, a second-generation, family-owned home-services business of about $3.2M. He and his wife Marie file jointly, and the family has established the Foster Family Trust as a succession-planning vehicle. Gerald found the firm via a Google search and signed on for a full-service relationship in mid-2026.
+
+Because the business is second-generation, succession and estate planning are top of mind — the trust points to a strong estate-and-advisory opportunity, and the family picture is best handled as a whole. Gerald is a classic-car hobbyist active in his church who rarely misses his grandkids' ballgames. Next up is introducing a formal estate and succession review.` },
+  5:{ interests:["Real-estate investing","Travel","Photography","Portfolio growth"],
+    summary:`Rebecca Tran is a W-2 professional building a real-estate portfolio on the side — currently three residential rentals held through Tran Rentals, LLC, alongside her personal return. She joined in mid-2026 as a Tier II client on a referral from existing client Crews Custom Homes.
+
+Rebecca's portfolio is growing, which puts her on a clear path toward Tier I and an advisory upgrade as doors are added — the relationship is worth watching for that inflection point. Her interests run to real-estate investing meetups, travel, and photography. The near-term play is simply to stay close as the portfolio expands.` },
+  6:{ interests:["Gardening","Book club","Newsletter nurture"],
+    summary:`Karen Sloan is an individual tax client with a straightforward personal return, brought on in mid-2026 through the firm's website. Hers is a light-touch, Tier III relationship.
+
+The right approach is to keep the relationship warm without a heavy service load — she is an ideal fit for the automated client newsletter and a brief annual check-in. Personally she enjoys gardening and her book club.` }
+};
+
+// Forward-looking life & business milestones we track for each client (the "we care about what matters to you" layer).
+const AHEAD = {
+  1:[ {label:"Roll out a profitability dashboard", cat:"Business", when:"This fall", date:"Oct 2026"},
+      {label:"Exit / succession planning", cat:"Business", when:"3–5 years out"},
+      {label:"Daughter starts college", cat:"Family", when:"Fall 2027", date:"Aug 2027"},
+      {label:"25th wedding anniversary", cat:"Personal", when:"Sep 2027", date:"Sep 2027"} ],
+  2:[ {label:"Third practice location — financing package", cat:"Business", when:"Q4 2026", date:"Nov 2026"},
+      {label:"Open the third location", cat:"Business", when:"~2027"},
+      {label:"Practice valuation / associate buy-in", cat:"Business", when:"Next 2 years"} ],
+  3:[ {label:"Launch new spec-home community", cat:"Business", when:"Spring 2027", date:"Mar 2027"},
+      {label:"Increase bonding capacity for commercial jobs", cat:"Business", when:"2027"},
+      {label:"20 years in business", cat:"Business", when:"2027"},
+      {label:"Son joining the business", cat:"Family", when:"Next year"} ],
+  4:[ {label:"Kick off succession & estate review", cat:"Business", when:"Sep 2026", date:"Sep 2026"},
+      {label:"Gerald's semi-retirement / transition", cat:"Personal", when:"~2028"},
+      {label:"Hand business to the next generation", cat:"Family", when:"3–5 years"} ],
+  5:[ {label:"Acquire 2 more rental doors", cat:"Business", when:"Early 2027", date:"Feb 2027"},
+      {label:"First commercial property (1031 exchange)", cat:"Business", when:"2027–28"},
+      {label:"Path to Tier I advisory upgrade", cat:"Business", when:"As portfolio grows"} ],
+  6:[ {label:"Planning retirement", cat:"Personal", when:"~2028"},
+      {label:"Considering downsizing / home sale", cat:"Personal", when:"Next few years"} ]
+};
+const CAT_C={Business:'#2f5aa0',Personal:'#a8722a',Family:'#2f6b45'};
+const CAT_B={Business:'#eef2f8',Personal:'#fbf3e2',Family:'#eef4ea'};
+
+const TEMPLATES={
+  Newsletter:{title:"The Bottom Line · Issue No. 01",body:"Your first issue of The Bottom Line — the lead essay 'July is for Independence,' our TikTok Tax Tips verdict on the G-Wagon write-off, and a Save the Date for Client Appreciation Day.",cta:"Read The Bottom Line"},
+  Announcement:{title:"An update from Titus CPAs",body:"We're writing to share an important update that affects your account. Please take a moment to review — and as always, reach out with any questions.",cta:"Learn more"},
+  "Check-in":{title:"Just checking in",body:"It's been a little while since we last connected. We'd love to hear how things are going and make sure we're doing everything we can to support you and your goals.",cta:"Schedule a call"}
+};
+const BROADCASTS=[
+  {name:"The Bottom Line — Issue 01",audience:"All clients (6)",date:"Jul 8, 2026",sent:6,open:"—",click:"—"},
+  {name:"June Client Newsletter",audience:"All clients (6)",date:"Jun 3, 2026",sent:6,open:"68%",click:"24%"},
+  {name:"Q2 Deadline Reminder",audience:"Business owners (4)",date:"May 20, 2026",sent:4,open:"81%",click:"39%"},
+  {name:"Welcome — New Clients",audience:"Onboarded (3)",date:"Jun 15, 2026",sent:3,open:"92%",click:"55%"}
+];
+
+const OWNERS = ["Mat Cox","Sam Bellman","Hudson Pitts"];
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const initials = s => s.replace(/^Dr\.?\s+/,'').split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+const fmtMoney = n => '$'+Number(n).toLocaleString();
+const $ = id => document.getElementById(id);
+let state = { view:'dashboard', from:'dashboard', selected:null, query:'', email:{ tier:'', portal:'', service:'', template:'Newsletter', subject:'The Bottom Line · Issue No. 01 · July 2026' } };
+
+function parseD(s){ return new Date(s); }
+function daysUntil(d){ return Math.round((d-TODAY)/86400000); }
+function nextBirthday(b){ let y=TODAY.getFullYear(); let d=new Date(y,b.m-1,b.d); if(d<TODAY) d=new Date(y+1,b.m-1,b.d); return d; }
+function fmtMD(d){ return MONTHS[d.getMonth()]+' '+d.getDate(); }
+
+function viewDashboard(){
+  const totalFees=REL.reduce((a,r)=>a+r.fees,0), entities=REL.reduce((a,r)=>a+r.entities.length,0), attn=REL.filter(r=>r.health!=='green');
+  const kpis=[ {n:REL.length,l:'Client Relationships'}, {n:entities,l:'Entities / Returns'}, {n:fmtMoney(totalFees),l:'Annual Fees (book)'}, {n:fmtMoney(Math.round(totalFees/REL.length)),l:'Avg Fees / Client'}, {n:attn.length,l:'Need Attention'} ];
+  const kpiHTML=kpis.map(k=>`<div class="kpi"><div class="n">${k.n}</div><div class="l">${k.l}</div></div>`).join('');
+  const tiers=['I','II','III'], tierFees=t=>REL.filter(r=>r.tier===t).reduce((a,r)=>a+r.fees,0), maxTier=Math.max(...tiers.map(tierFees),1), tcolor={I:'#2f9e74',II:'#3f72a4',III:'#c9803a'};
+  const tierHTML=tiers.map(t=>{const f=tierFees(t),c=REL.filter(r=>r.tier===t).length;return `<div class="bar-row"><span class="lab">Tier ${t}</span><div class="bar"><span style="width:${Math.max(f/maxTier*100,3)}%;background:${tcolor[t]}"></span></div><span class="val">${c} · ${fmtMoney(f)}</span></div>`;}).join('');
+  const ownerFees=o=>REL.filter(r=>r.owner===o).reduce((a,r)=>a+r.fees,0), maxOwner=Math.max(...OWNERS.map(ownerFees),1);
+  const ownerHTML=[...OWNERS].sort((a,b)=>ownerFees(b)-ownerFees(a)).map(o=>{const f=ownerFees(o);return `<div class="bar-row"><span class="lab" style="display:flex;align-items:center;gap:7px"><span class="av sm ${o==='Mat Cox'?'gold':''}">${initials(o)}</span></span><div class="bar"><span style="width:${Math.max(f/maxOwner*100,3)}%;background:var(--navy)"></span></div><span class="val">${o.split(' ')[0]} · ${fmtMoney(f)}</span></div>`;}).join('');
+  const attnHTML=attn.length?attn.map(r=>`<div class="mini" data-open="${r.id}" style="cursor:pointer"><span class="hd ${r.health}"></span><div class="mm"><div class="nm">${r.name}</div><div class="sub">${r.nextStep.action}</div></div><div class="end">${r.owner.split(' ')[0]}</div></div>`).join(''):`<div class="hint">Everyone's healthy.</div>`;
+  let dl=[]; REL.forEach(r=>r.keyDates.forEach(k=>{const d=parseD(k.date),du=daysUntil(d);if(du>=0&&du<=100)dl.push({r,k,d,du});})); dl.sort((a,b)=>a.d-b.d);
+  const dlHTML=dl.length?dl.map(x=>`<div class="mini" data-open="${x.r.id}" style="cursor:pointer"><div class="av sm">${initials(x.r.contact.name)}</div><div class="mm"><div class="nm">${x.k.label}</div><div class="sub">${x.r.name}</div></div><div class="end" style="color:${x.du<=30?'var(--amber)':'var(--muted)'}">${x.k.date}<br><span style="font-size:11px">in ${x.du}d</span></div></div>`).join(''):`<div class="hint">Nothing in the next 100 days.</div>`;
+  let bd=REL.map(r=>({r,d:nextBirthday(r.birthday)})).map(x=>({...x,du:daysUntil(x.d)})).filter(x=>x.du>=0&&x.du<=120).sort((a,b)=>a.d-b.d);
+  const bdHTML=bd.length?bd.map(x=>`<div class="mini" data-open="${x.r.id}" style="cursor:pointer"><div class="av sm gold">${initials(x.r.contact.name)}</div><div class="mm"><div class="nm">${x.r.contact.name}</div><div class="sub">${x.r.name}</div></div><div class="end">${fmtMD(x.d)}<br><span style="font-size:11px">in ${x.du}d</span></div></div>`).join(''):`<div class="hint">None upcoming.</div>`;
+  const pc=s=>REL.filter(r=>r.portal===s).length;
+  const portalHTML=`<div class="pstat"><div class="pcard"><div class="n" style="color:var(--green)">${pc('Active')}</div><div class="l">Portal active</div></div><div class="pcard"><div class="n" style="color:var(--amber)">${pc('Invited')}</div><div class="l">Invited</div></div><div class="pcard"><div class="n" style="color:var(--red)">${pc('None')}</div><div class="l">Not set up</div></div></div>`;
+  let ma=[]; Object.keys(AHEAD).forEach(id=>AHEAD[id].forEach(a=>{ if(a.date){ const d=parseD(a.date),du=daysUntil(d); if(du>=0&&du<=470){ ma.push({r:REL.find(x=>x.id==id),a,d}); } } })); ma.sort((x,y)=>x.d-y.d);
+  const maHTML=ma.length?ma.map(x=>`<div class="mini" data-open="${x.r.id}" style="cursor:pointer"><span class="acat" style="background:${CAT_B[x.a.cat]};color:${CAT_C[x.a.cat]}">${x.a.cat}</span><div class="mm"><div class="nm">${x.a.label}</div><div class="sub">${x.r.name}</div></div><div class="end">${x.a.when}</div></div>`).join(''):`<div class="hint">None logged.</div>`;
+  let acts=[]; REL.forEach(r=>r.timeline.forEach(t=>acts.push({r,t,d:parseD(t.date)}))); acts.sort((a,b)=>b.d-a.d); acts=acts.slice(0,6);
+  const actHTML=acts.map(x=>`<div class="mini" data-open="${x.r.id}" style="cursor:pointer"><span class="tt" style="background:var(--navy2);color:#fff;font-size:10.5px;font-weight:700;border-radius:6px;padding:2px 7px">${x.t.type}</span><div class="mm"><div class="nm">${x.r.name}</div><div class="sub">${x.t.note}</div></div><div class="end">${x.t.date.replace(', 2026','')}</div></div>`).join('');
+  return `<h2 class="page serif">Client Dashboard</h2><p class="psub">Your whole book of business at a glance — ${REL.length} relationships across ${entities} entities. <span style="color:#2f6db0">Click any client to open their record.</span></p>
+    <div class="kpis">${kpiHTML}</div>
+    <div class="grid"><div class="panel"><div class="ph"><h3>Book of business by tier</h3><span class="hint">Clients · annual fees</span></div>${tierHTML}</div><div class="panel"><div class="ph"><h3>Relationship managers</h3><span class="hint">Annual fees managed</span></div>${ownerHTML}</div></div>
+    <div class="grid"><div class="panel"><div class="ph"><h3>Needs attention</h3><span class="hint">Health flags</span></div>${attnHTML}</div><div class="panel"><div class="ph"><h3>Portal status</h3><span class="hint">TaxDome onboarding</span></div>${portalHTML}</div></div>
+    <div class="grid"><div class="panel"><div class="ph"><h3>Upcoming deadlines</h3><span class="hint">Next 100 days</span></div>${dlHTML}</div><div class="panel"><div class="ph"><h3>Upcoming birthdays</h3><span class="hint">Client-experience touches</span></div>${bdHTML}</div></div>
+    <div class="grid">
+      <div class="panel"><div class="ph"><h3>Client milestones ahead</h3><span class="hint">Proactive outreach</span></div>${maHTML}</div>
+      <div class="panel"><div class="ph"><h3>Recent activity</h3><span class="hint">Across all clients</span></div>${actHTML}</div>
+    </div>`;
+}
+
+function viewClients(){
+  const q=state.query.trim().toLowerCase();
+  const rows=REL.filter(r=>{ if(!q) return true; const hay=(r.name+' '+r.owner+' '+r.contact.name+' '+r.entities.map(e=>e.name).join(' ')).toLowerCase(); return hay.includes(q); });
+  const cards=rows.map(r=>`
+    <div class="ccard" data-open="${r.id}">
+      <div class="ct"><div class="av lg ${r.owner==='Mat Cox'?'gold':''}">${initials(r.contact.name)}</div>
+        <div style="flex:1"><div class="nm">${r.name}</div><div class="sub">${r.contact.name} · ${r.industry}</div></div>
+        <span class="hd ${r.health}" title="Health"></span></div>
+      <div class="stats"><div class="st"><div class="v">${fmtMoney(r.fees)}</div><div class="l">Annual fees</div></div><div class="st"><div class="v">${r.entities.length}</div><div class="l">Entities</div></div><div class="st"><div class="v">${r.revenue}</div><div class="l">Revenue</div></div></div>
+      <div class="foot"><span class="tier ${r.tier}">Tier ${r.tier}</span><span class="chip">${r.owner.split(' ')[0]}</span><span class="chip">Portal: ${r.portal==='None'?'—':r.portal}</span><span class="open">Open record →</span></div>
+    </div>`).join('') || `<div class="hint">No matches.</div>`;
+  return `<h2 class="page serif">Clients</h2><p class="psub">Every client is a relationship — owner, entities, and family together. Click a card to open the full record.</p>
+    <input class="search" id="search" placeholder="Search clients, owners, entities…" value="${state.query.replace(/"/g,'&quot;')}" />
+    <div class="cards">${cards}</div>`;
+}
+
+function viewRecord(){
+  const r=REL.find(x=>x.id===state.selected); if(!r) return viewClients();
+  const people=r.people.map(p=>`<div class="person"><div class="av sm ${r.owner==='Mat Cox'?'gold':''}">${initials(p.name)}</div><div style="flex:1"><div class="pn">${p.name}</div><div class="pr">${p.role}</div><div class="pr">${p.email} · ${p.phone}</div></div><div class="pr" style="text-align:right">🎂 ${p.bday}</div></div>`).join('');
+  const entities=r.entities.map(e=>`<div class="ent"><div><div class="en">${e.name}</div><div class="es">${e.note}</div></div><span class="etype">${e.type}</span></div>`).join('');
+  const kdates=r.keyDates.map(k=>{const du=daysUntil(parseD(k.date));return `<div class="kd ${du>=0&&du<=45?'soon':''}"><span>${k.label}</span><span class="dt">${k.date}</span></div>`;}).join('');
+  const engs=r.engagements.map(e=>`<div class="eng"><span>${e.name}</span><span>${fmtMoney(e.fee)}</span></div>`).join('')+`<div class="eng"><span>Total annual fees</span><span>${fmtMoney(r.fees)}</span></div>`;
+  const miles=r.milestones.map(m=>`<div class="m"><div class="md">${m.date}</div><div class="ml">${m.label}</div></div>`).join('');
+  const tl=r.timeline.map(t=>`<div class="t"><span class="tt">${t.type}</span><div><div class="tn">${t.note}</div><div class="tm">${t.date} · ${t.by}</div></div></div>`).join('');
+  const svcs=r.services.map(s=>`<span class="svc">${s}</span>`).join('');
+  const en=ENRICH[r.id]||{interests:[],summary:''};
+  const paras=en.summary.trim().split(/\n\n+/).map(x=>`<p>${x}</p>`).join('');
+  const ints=(en.interests||[]).map(i=>`<span class="int">${i}</span>`).join('');
+  const mapPeople=r.people.map(p=>`<div class="node">${p.name}<div class="s">${p.role}</div></div>`).join('');
+  const mapEnt=r.entities.map(e=>`<div class="node">${e.name}<div class="s">${e.type}</div></div>`).join('');
+  const aheadItems=AHEAD[r.id]||[];
+  const aheadHTML=aheadItems.length?aheadItems.map(a=>`<div class="ahead"><span class="acat" style="background:${CAT_B[a.cat]};color:${CAT_C[a.cat]}">${a.cat}</span><div><div class="al">${a.label}</div><div class="aw">${a.when}</div></div></div>`).join(''):`<div style="font-size:12.5px;color:var(--muted)">No upcoming milestones logged yet.</div>`;
+  const summ=`<div class="sect"><h3>Client summary</h3><div class="summary-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><span class="ai-badge">✦ AI SUMMARY</span><span style="font-size:11px;color:var(--muted)">Generated Jul 8, 2026 · <button class="regen" id="regen">Regenerate</button></span></div>
+      ${paras}
+      <div class="interests">${ints}</div>
+      <div class="map"><div class="mapcol"><div class="mt">People</div>${mapPeople}</div><div class="mapcol"><div class="mt">Businesses &amp; returns</div>${mapEnt}</div></div>
+      <div class="caveat">✎ AI-drafted from your notes, milestones &amp; public sources — review &amp; edit before client use.</div>
+    </div></div>`;
+  return `<button class="back" id="back">← Back to ${state.from==='dashboard'?'dashboard':'clients'}</button>
+    <div class="record">
+      <div class="dhead"><div class="av lg ${r.owner==='Mat Cox'?'gold':''}" style="background:${r.owner==='Mat Cox'?'var(--gold)':'#26507f'};color:${r.owner==='Mat Cox'?'var(--navy)':'#fff'}">${initials(r.contact.name)}</div>
+        <div><div class="nm serif">${r.name}</div><div class="row"><span class="pill">Tier ${r.tier}</span><span class="pill">${r.industry}</span><span class="pill">Owner · ${r.owner}</span><span class="pill">● ${r.health==='green'?'Healthy':r.health==='amber'?'Watch':'At risk'}</span></div></div></div>
+      <div class="statline">
+        <div class="stat"><div class="l">Annual fees</div><div class="v">${fmtMoney(r.fees)}</div></div>
+        <div class="stat"><div class="l">Client revenue</div><div class="v">${r.revenue}</div></div>
+        <div class="stat"><div class="l">Referral source</div><div class="v sm">${r.referral}</div></div>
+        <div class="stat"><div class="l">Client since</div><div class="v sm">${r.since}</div></div>
+        <div class="stat"><div class="l">Portal</div><div class="v sm"><span class="portal ${r.portal}">${r.portal==='None'?'Not set up':r.portal}</span></div></div>
+        <div class="stat"><div class="l">Documents</div><div class="v sm">${r.docCount} on file</div></div>
+      </div>
+      <div class="dbody">
+        ${summ}
+        <div class="row2">
+          <div class="sect"><h3>Key people</h3><div class="box">${people}</div></div>
+          <div class="sect"><h3>Next step</h3><div class="nextbox"><div class="l">Next step</div><div class="a">${r.nextStep.action}</div><div class="d">Due ${r.nextStep.due}</div></div>
+            <div style="margin-top:10px;font-size:11.5px;color:var(--muted)">Last touch: ${r.lastTouch.date} — ${r.lastTouch.note}</div></div>
+        </div>
+        <div class="sect"><h3>Entities &amp; returns in this relationship</h3><div class="box">${entities}</div></div>
+        <div class="row2">
+          <div class="sect"><h3>Key dates &amp; deadlines</h3><div class="box">${kdates}</div></div>
+          <div class="sect"><h3>Engagements &amp; fees</h3><div class="box">${engs}</div></div>
+        </div>
+        <div class="sect"><h3>Services</h3><div class="services">${svcs}</div></div>
+        <div class="row2">
+          <div class="sect"><h3>Looking ahead — life &amp; business</h3><div class="box">${aheadHTML}</div></div>
+          <div class="sect"><h3>Relationship milestones</h3><div class="ms">${miles}</div></div>
+        </div>
+        <div class="sect"><h3>Recent activity</h3><div class="tl">${tl}</div></div>
+        <div class="sect"><h3>Notes</h3><div class="box notes">${r.notes}</div></div>
+      </div>
+    </div>`;
+}
+
+/* ---------- EMAIL ---------- */
+function emailMatches(){ const e=state.email; return REL.filter(r=> (!e.tier||r.tier===e.tier) && (!e.portal||r.portal===e.portal) && (!e.service||r.services.some(s=>s.toLowerCase().includes(e.service.toLowerCase()))) ); }
+function viewEmail(){
+  const e=state.email, match=emailMatches(), tpl=TEMPLATES[e.template];
+  const tierOpts=['','I','II','III'].map(v=>`<option value="${v}" ${e.tier===v?'selected':''}>${v?'Tier '+v:'All tiers'}</option>`).join('');
+  const portalOpts=['','Active','Invited','None'].map(v=>`<option value="${v}" ${e.portal===v?'selected':''}>${v?('Portal: '+(v==='None'?'not set up':v)):'Any portal'}</option>`).join('');
+  const svcOpts=['','CAS','Business Tax','Personal 1040','Advisory','Estate & Trust','Construction'].map(v=>`<option value="${v}" ${e.service===v?'selected':''}>${v?('Uses: '+v):'Any service'}</option>`).join('');
+  const chips=match.map(r=>`<span class="chip">${r.contact.name.replace(/^Dr\.?\s+/,'')}</span>`).join('') || '<span class="hint">No clients match.</span>';
+  const uniqEmails=[...new Set(match.map(r=>r.contact.email.toLowerCase()))]; const uniq=uniqEmails.length;
+  const accounts=match.reduce((a,r)=>a+r.entities.length,0); const dupsPrevented=Math.max(accounts-uniq,0);
+  const saved=[ {l:'All clients'}, {l:'Tier I',tier:'I'}, {l:'Uses CAS',service:'CAS'}, {l:'Individuals',tier:'III'}, {l:'Portal not set up',portal:'None'} ];
+  const savedHTML=saved.map(s=>`<span class="savedchip" data-tier="${s.tier||''}" data-portal="${s.portal||''}" data-service="${s.service||''}">${s.l}</span>`).join('');
+  const tplOpts=Object.keys(TEMPLATES).map(k=>`<option ${e.template===k?'selected':''}>${k}</option>`).join('');
+  const kpiHTML=[ {n:REL.length,l:'Subscribers'}, {n:'74%',l:'Avg open rate'}, {n:'12',l:'Campaigns sent'}, {n:'3',l:'Active automations'} ].map(k=>`<div class="kpi"><div class="n">${k.n}</div><div class="l">${k.l}</div></div>`).join('');
+  const bHTML=BROADCASTS.map(b=>`<tr><td style="font-weight:600;color:var(--navy)">${b.name}</td><td>${b.audience}</td><td>${b.date}</td><td>${b.sent}</td><td>${b.open}</td><td>${b.click}</td></tr>`).join('');
+  const autos=[ {n:'Welcome sequence',d:'New clients get a 3-email intro over their first two weeks',on:true}, {n:'Quarterly check-in',d:'A light "how are things?" nudge from the relationship owner',on:true}, {n:'Post-filing thank-you',d:'Sent automatically after a return is delivered',on:false}, {n:'Birthday greeting',d:'A warm note on each contact\'s birthday',on:true} ];
+  const autoHTML=autos.map(a=>`<div class="auto"><div class="sw ${a.on?'on':''}"></div><div><div class="an">${a.n}</div><div class="ad">${a.d}</div></div></div>`).join('');
+  const simpleMail=`<div class="mail"><div class="mh"><div class="b">TITUS <span>CPAs</span></div></div><div class="mb"><div class="mt">${tpl.title}</div><p>Hi <b>{{First name}}</b>,</p><p>${tpl.body}</p><a class="cta">${tpl.cta}</a></div>
+          <div class="mf">Titus CPAs · 3100 Independence Dr, Suite 100, Birmingham, AL 35209<br>You're receiving this as a client of Titus CPAs. <a>Unsubscribe</a> · Sent individually — recipients never see each other.</div></div>`;
+  const newsletterPreview=`<div style="border:1px solid #e3e0d8;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 6px 20px rgba(19,43,73,.10)">
+          <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:#f3f1ea;border-bottom:1px solid #e3e0d8">
+            <span style="width:9px;height:9px;border-radius:50%;background:#e6635a"></span><span style="width:9px;height:9px;border-radius:50%;background:#e6b34a"></span><span style="width:9px;height:9px;border-radius:50%;background:#5db075"></span>
+            <span style="margin-left:8px;font-size:11px;color:#6b7280">The Bottom Line · Issue No. 01 · rendered from your actual newsletter file</span>
+          </div>
+          <iframe src="newsletter-bottom-line-jul2026.html" title="The Bottom Line newsletter" style="width:100%;height:560px;border:0;display:block;background:#fff"></iframe>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">↑ Scroll inside the frame to read the whole issue. This is <b>newsletter-bottom-line-jul2026.html</b> — the same file that goes out to each recipient individually.</div>`;
+  const previewHTML = e.template==='Newsletter' ? newsletterPreview : simpleMail;
+  return `
+    <h2 class="page serif">Email &amp; Newsletters</h2><p class="psub">Segment your clients and reach them with branded, compliant email — powered by your relationship data.</p>
+    <div class="kpis">${kpiHTML}</div>
+    <div class="email-grid">
+      <div class="panel">
+        <div class="ph"><h3>Build an audience</h3><span class="hint">Live from client data</span></div>
+        <div class="seg-filters"><select id="segTier" data-k="tier">${tierOpts}</select><select id="segPortal" data-k="portal">${portalOpts}</select><select id="segService" data-k="service">${svcOpts}</select></div>
+        <div class="box" style="text-align:center;padding:16px"><div class="count-big">${uniq}</div><div class="hint">unique ${uniq===1?'recipient':'recipients'} · deduplicated by email</div>
+          ${dupsPrevented>0?`<div style="font-size:11.5px;color:var(--green);margin-top:4px">✓ ${match.length} relationships / ${accounts} accounts → ${uniq} unique — ${dupsPrevented} duplicate ${dupsPrevented===1?'send':'sends'} prevented</div>`:`<div style="font-size:11.5px;color:var(--muted);margin-top:4px">${match.length} relationship${match.length===1?'':'s'} · no duplicates</div>`}
+          <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:12px">${chips}</div></div>
+        <div style="margin-top:12px"><div class="hint" style="margin-bottom:6px">Saved segments</div><div class="saved">${savedHTML}</div></div>
+      </div>
+      <div class="panel">
+        <div class="ph"><h3>Compose</h3><span class="hint">Branded template</span></div>
+        <div class="field" style="margin-bottom:10px"><label>Subject</label><input id="subjInput" value="${e.subject.replace(/"/g,'&quot;')}" /></div>
+        <div class="field" style="margin-bottom:14px"><label>Template</label><select id="tplSel">${tplOpts}</select></div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Preview · Subject: <b id="subjLine">${e.subject||'(no subject)'}</b></div>
+        ${previewHTML}
+        <div style="display:flex;gap:8px;margin-top:14px;align-items:center;flex-wrap:wrap"><button class="btn gold" id="sendBtn">Send to ${uniq} recipient${uniq===1?'':'s'}</button><button class="btn ghost">Schedule</button></div>
+        <div id="sendMsg" style="font-size:12px;color:var(--green);margin-top:8px;min-height:14px"></div>
+      </div>
+    </div>
+    <div class="panel"><div class="ph"><h3>Recent broadcasts</h3><span class="hint">Opens · clicks</span></div><table class="tbl"><thead><tr><th>Campaign</th><th>Audience</th><th>Sent</th><th>Recipients</th><th>Open</th><th>Click</th></tr></thead><tbody>${bHTML}</tbody></table></div>
+    <div class="email-grid">
+      <div class="panel"><div class="ph"><h3>Automations</h3><span class="hint">Set-and-forget cadences</span></div>${autoHTML}</div>
+      <div class="panel"><div class="ph"><h3>Deliverability &amp; compliance</h3><span class="hint">Built in</span></div>
+        <div style="font-size:13px;color:#3f4751;line-height:1.7">
+          <div>✓ <b>De-duplicated by email</b> — a client never gets the same message twice, even if their address is on multiple accounts or entities (their personal 1040 and their business).</div>
+          <div>✓ One-click <b>unsubscribe</b> + firm mailing address on every send (CAN-SPAM).</div>
+          <div>✓ Emails sent <b>individually</b> — clients never see each other's addresses.</div>
+          <div>✓ Sends from <b>tituscpa.com</b> (SPF/DKIM verified) via Resend Broadcasts.</div>
+          <div>✓ Unsubscribes are honored automatically and skipped on future sends.</div>
+        </div></div>
+    </div>`;
+}
+function bindEmail(){
+  ['segTier','segPortal','segService'].forEach(id=>{ const el=$(id); if(el) el.onchange=()=>{ state.email[el.dataset.k]=el.value; render(); }; });
+  const tpl=$('tplSel'); if(tpl) tpl.onchange=()=>{ state.email.template=tpl.value; render(); };
+  const subj=$('subjInput'); if(subj){ subj.oninput=()=>{ state.email.subject=subj.value; const s=$('subjLine'); if(s) s.textContent=subj.value||'(no subject)'; }; }
+  document.querySelectorAll('.savedchip').forEach(c=>c.onclick=()=>{ state.email.tier=c.dataset.tier; state.email.portal=c.dataset.portal; state.email.service=c.dataset.service; render(); });
+  document.querySelectorAll('.sw').forEach(s=>s.onclick=()=>s.classList.toggle('on'));
+  const sb=$('sendBtn'); if(sb) sb.onclick=()=>{ const m=$('sendMsg'); if(m) m.textContent='✓ Demo only — in production this queues an individual, tracked send to each recipient via Resend Broadcasts.'; };
+}
+
+function openRecord(id){ state.from=state.view; state.selected=id; state.view='record'; render(); }
+
+function render(){
+  $('wrap').innerHTML = state.view==='dashboard'?viewDashboard() : state.view==='clients'?viewClients() : state.view==='email'?viewEmail() : viewRecord();
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.view===state.view));
+  document.querySelectorAll('[data-open]').forEach(el=>el.onclick=()=>openRecord(+el.dataset.open));
+  const s=$('search'); if(s){ s.oninput=e=>{ state.query=e.target.value; render(); }; s.focus(); s.setSelectionRange(s.value.length,s.value.length); }
+  const b=$('back'); if(b) b.onclick=()=>{ state.view=state.from||'clients'; render(); };
+  if(state.view==='email') bindEmail();
+}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{ state.view=t.dataset.view; render(); });
+render();
+</script>
+</body>
+</html>
