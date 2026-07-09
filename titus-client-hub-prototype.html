@@ -99,18 +99,58 @@
   .tbl{ width:100%; border-collapse:collapse; } .tbl th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--muted); padding:8px 10px; border-bottom:1px solid var(--line); } .tbl td{ padding:9px 10px; border-bottom:1px solid #f0ece1; font-size:13px; }
   .auto{ display:flex; align-items:center; gap:12px; padding:11px 0; border-bottom:1px solid #f0ece1; } .auto:last-child{ border-bottom:none; } .auto .an{ font-weight:600; color:var(--navy); font-size:13.5px; } .auto .ad{ font-size:12px; color:var(--muted); }
   .sw{ width:38px; height:22px; border-radius:20px; background:#cfd6df; position:relative; flex:none; cursor:pointer; } .sw.on{ background:var(--green); } .sw::after{ content:''; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#fff; transition:left .15s; } .sw.on::after{ left:18px; }
+  /* --- section switch + Groundwork --- */
+  .top .brand .hublabel{ font-size:9.5px; letter-spacing:1.5px; color:var(--gold); border:1px solid rgba(209,175,68,.5); border-radius:20px; padding:2px 8px; margin-left:9px; }
+  .secsw{ display:flex; gap:4px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); border-radius:22px; padding:3px; margin-left:4px; }
+  .secsw button{ background:none; border:none; color:#b9c4d4; font-size:12.5px; font-weight:700; padding:6px 14px; border-radius:20px; cursor:pointer; white-space:nowrap; }
+  .secsw button.on{ background:var(--gold); color:var(--navy); }
+  .ctx{ font-size:12.5px; color:var(--muted); margin:-2px 0 16px; max-width:760px; }
+  .ctx b{ color:var(--navy); }
+  .bars{ display:flex; flex-direction:column; gap:9px; }
+  .barrow{ display:grid; grid-template-columns:118px 1fr auto; align-items:center; gap:10px; font-size:12.5px; }
+  .barrow .bl{ color:var(--navy); font-weight:600; }
+  .bartrack{ background:#eee7d7; border-radius:8px; height:16px; overflow:hidden; }
+  .barfill{ height:100%; background:linear-gradient(90deg,#132b49,#2b567f); border-radius:8px; }
+  .barv{ color:var(--muted); font-weight:600; white-space:nowrap; }
+  .kanban{ display:grid; grid-template-columns:repeat(6,minmax(150px,1fr)); gap:12px; overflow-x:auto; padding-bottom:6px; }
+  .kcol{ background:#fbf8f0; border:1px solid var(--line); border-radius:12px; padding:10px; min-width:150px; }
+  .kcol .kh{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--navy); display:flex; align-items:center; gap:6px; margin-bottom:8px; }
+  .kcol .kh .cnt{ margin-left:auto; background:#fff; border:1px solid var(--line); border-radius:12px; padding:1px 7px; font-size:11px; color:var(--muted); }
+  .lcard{ background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px; margin-bottom:8px; }
+  .lcard .ln{ font-weight:700; color:var(--navy); font-size:13px; }
+  .lcard .lc{ font-size:11.5px; color:var(--muted); margin-bottom:6px; }
+  .lcard .lmeta{ display:flex; align-items:center; justify-content:space-between; }
+  .lcard .val{ color:var(--green); font-weight:700; font-size:12.5px; }
+  .due{ font-size:11px; color:var(--muted); } .due.over{ color:#c0392b; font-weight:700; }
+  .miniava{ width:20px; height:20px; border-radius:50%; background:var(--navy); color:#fff; font-size:9px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; }
 </style>
 </head>
 <body>
   <div class="top">
-    <div class="brand">TITUS <b>CPAs</b></div>
-    <div class="tabs"><button class="tab on" data-view="dashboard">Dashboard</button><button class="tab" data-view="clients">Clients</button><button class="tab" data-view="email">Email</button></div>
+    <div class="brand">TITUS <b>CPAs</b><span class="hublabel">CLIENT HUB</span></div>
+    <div class="secsw" id="secsw"></div>
+    <div class="tabs" id="tabs"></div>
     <div class="proto">PROTOTYPE · sample data</div>
   </div>
   <div class="wrap" id="wrap"></div>
 
 <script>
 const TODAY = new Date(2026,6,8);
+const CURRENT_USER = "Mat Cox";
+const fmtD = iso => new Date(iso+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+const isOver = iso => new Date(iso+'T00:00:00') < TODAY;
+const inits = n => n.split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+const STAGES = ["New","Contacted","Qualified","Meeting","Scope Sent","Closed Won"];
+const LEADS = [
+  {name:"Harmon Dental Group", who:"Dr. Alicia Harmon", stage:"Meeting", owner:"Sam Bellman", source:"Referral (client)", tier:"I", value:18000, next:"Send Scope of Services", due:"2026-07-06"},
+  {name:"Rivera & Sons Construction", who:"Manuel Rivera", stage:"Qualified", owner:"Mat Cox", source:"Website", tier:"I", value:26000, next:"Discovery call", due:"2026-07-10"},
+  {name:"Coastal Physical Therapy", who:"Priya Nair", stage:"Scope Sent", owner:"Hudson Pitts", source:"Referral (Dr. Lane)", tier:"II", value:14000, next:"Follow up on scope", due:"2026-07-09"},
+  {name:"Nguyen Family", who:"Kevin Nguyen", stage:"New", owner:"Sam Bellman", source:"Paid Ads (Meta)", tier:"III", value:3500, next:"Send intro email", due:"2026-07-08"},
+  {name:"Beacon Logistics", who:"Tara Ellison", stage:"Contacted", owner:"Mat Cox", source:"Networking", tier:"I", value:32000, next:"Schedule intro call", due:"2026-07-11"},
+  {name:"Summit Roofing Co.", who:"Bo Carter", stage:"Qualified", owner:"Mat Cox", source:"Website", tier:"II", value:16000, next:"Send engagement questions", due:"2026-07-03"},
+  {name:"Oak & Iron Interiors", who:"Lena Park", stage:"Meeting", owner:"Hudson Pitts", source:"Referral", tier:"II", value:12000, next:"Proposal meeting", due:"2026-07-14"},
+  {name:"Delgado Holdings", who:"Rafael Delgado", stage:"Closed Won", owner:"Mat Cox", source:"Referral", tier:"I", value:21000, next:"Kick off onboarding → Legacy Builder", due:"2026-07-09"}
+];
 const REL = [
   { id:1, name:"Whitfield Family & Companies", tier:"I", owner:"Mat Cox", health:"green", industry:"Logistics / Transportation",
     fees:42000, revenue:"~$6.0M", referral:"Dale Roberts (client)", portal:"Active", docCount:24,
@@ -272,13 +312,46 @@ const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov
 const initials = s => s.replace(/^Dr\.?\s+/,'').split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
 const fmtMoney = n => '$'+Number(n).toLocaleString();
 const $ = id => document.getElementById(id);
-let state = { view:'dashboard', from:'dashboard', selected:null, query:'', email:{ tier:'', portal:'', service:'', template:'Newsletter', subject:'The Bottom Line · Issue No. 01 · July 2026' } };
+let state = { section:'ground', view:'dashboard', from:'dashboard', selected:null, query:'', email:{ tier:'', portal:'', service:'', template:'Newsletter', subject:'The Bottom Line · Issue No. 01 · July 2026' } };
 
 function parseD(s){ return new Date(s); }
 function daysUntil(d){ return Math.round((d-TODAY)/86400000); }
 function nextBirthday(b){ let y=TODAY.getFullYear(); let d=new Date(y,b.m-1,b.d); if(d<TODAY) d=new Date(y+1,b.m-1,b.d); return d; }
 function fmtMD(d){ return MONTHS[d.getMonth()]+' '+d.getDate(); }
 
+function viewSalesDashboard(){
+  const open = LEADS.filter(l=>l.stage!=='Closed Won');
+  const openVal = open.reduce((a,l)=>a+l.value,0);
+  const mine = LEADS.filter(l=>l.owner===CURRENT_USER && l.stage!=='Closed Won').sort((a,b)=>a.due<b.due?-1:1);
+  const kpi=[{n:'$'+(openVal/1000).toFixed(0)+'k',l:'Open pipeline'},{n:open.length,l:'Active leads'},{n:'58%',l:'Win rate · 90d'},{n:'34 days',l:'Avg time to win'}];
+  const kpiHTML=kpi.map(k=>`<div class="kpi"><div class="n">${k.n}</div><div class="l">${k.l}</div></div>`).join('');
+  const maxc = Math.max(...STAGES.map(s=>LEADS.filter(l=>l.stage===s).length),1);
+  const bars = STAGES.map(s=>{ const ls=LEADS.filter(l=>l.stage===s); const v=ls.reduce((a,l)=>a+l.value,0); return `<div class="barrow"><div class="bl">${s}</div><div class="bartrack"><div class="barfill" style="width:${Math.max(ls.length/maxc*100,5)}%"></div></div><div class="barv">${ls.length} · $${(v/1000).toFixed(0)}k</div></div>`; }).join('');
+  const mineHTML = mine.length?mine.map(l=>`<div class="auto"><div><div class="an">${l.next} <span style="color:var(--muted);font-weight:600">· ${l.name}</span></div><div class="ad">${l.stage} · $${(l.value/1000).toFixed(0)}k potential</div></div><div class="due ${isOver(l.due)?'over':''}" style="margin-left:auto">${isOver(l.due)?'Overdue · ':''}${fmtD(l.due)}</div></div>`).join(''):'<div class="hint">Nothing due — you\'re clear.</div>';
+  const owners=[...new Set(LEADS.map(l=>l.owner))];
+  const lb=owners.map(o=>{ const ls=LEADS.filter(l=>l.owner===o); return {o,c:ls.length,v:ls.reduce((a,l)=>a+l.value,0)}; }).sort((a,b)=>b.v-a.v);
+  const lbHTML=lb.map((r,i)=>`<tr><td style="font-weight:700;color:var(--navy)">${i+1}. ${r.o}</td><td>${r.c}</td><td>$${(r.v/1000).toFixed(0)}k</td></tr>`).join('');
+  const recent=LEADS.map(l=>`<tr><td style="font-weight:600;color:var(--navy)">${l.name}</td><td>${l.stage}</td><td>${l.owner}</td><td>${l.source}</td><td>$${(l.value/1000).toFixed(0)}k</td><td class="${isOver(l.due)?'due over':'due'}">${isOver(l.due)?'Overdue · ':''}${fmtD(l.due)}</td></tr>`).join('');
+  return `
+    <h2 class="page serif">Groundwork</h2><p class="ctx"><b>Sales — winning the client.</b> Everything before they say yes: your pipeline, your leads, and the next moves to land them. When a lead is won, it graduates into <b>Legacy Builder</b>.</p>
+    <div class="kpis">${kpiHTML}</div>
+    <div class="email-grid">
+      <div class="panel"><div class="ph"><h3>Pipeline by stage</h3><span class="hint">count · value</span></div><div class="bars">${bars}</div></div>
+      <div class="panel"><div class="ph"><h3>My next steps</h3><span class="hint">${CURRENT_USER}</span></div>${mineHTML}</div>
+    </div>
+    <div class="email-grid">
+      <div class="panel"><div class="ph"><h3>Origination leaderboard</h3><span class="hint">by pipeline value</span></div><table class="tbl"><thead><tr><th>Partner</th><th>Leads</th><th>Pipeline</th></tr></thead><tbody>${lbHTML}</tbody></table></div>
+      <div class="panel"><div class="ph"><h3>Recent leads</h3><span class="hint">latest activity</span></div><table class="tbl"><thead><tr><th>Lead</th><th>Stage</th><th>Owner</th><th>Source</th><th>Value</th><th>Next due</th></tr></thead><tbody>${recent}</tbody></table></div>
+    </div>`;
+}
+function viewPipeline(){
+  const cols=STAGES.map(s=>{ const ls=LEADS.filter(l=>l.stage===s);
+    const cards=ls.map(l=>`<div class="lcard"><div class="ln">${l.name}</div><div class="lc">${l.who} · Tier ${l.tier}</div><div class="lmeta"><span class="miniava" title="${l.owner}">${inits(l.owner)}</span><span class="val">$${(l.value/1000).toFixed(0)}k</span></div><div class="due ${isOver(l.due)?'over':''}" style="margin-top:7px">${isOver(l.due)?'Overdue · ':'Next · '}${fmtD(l.due)} · ${l.next}</div></div>`).join('')||'<div class="hint" style="padding:6px 2px">—</div>';
+    return `<div class="kcol"><div class="kh">${s}<span class="cnt">${ls.length}</span></div>${cards}</div>`; }).join('');
+  return `
+    <h2 class="page serif">Groundwork · Pipeline</h2><p class="ctx"><b>Your sales pipeline.</b> Drag-and-drop kanban in the live app; here it's a snapshot. The last column — <b>Closed Won</b> — is the hand-off point into Legacy Builder.</p>
+    <div class="kanban">${cols}</div>`;
+}
 function viewDashboard(){
   const totalFees=REL.reduce((a,r)=>a+r.fees,0), entities=REL.reduce((a,r)=>a+r.entities.length,0), attn=REL.filter(r=>r.health!=='green');
   const kpis=[ {n:REL.length,l:'Client Relationships'}, {n:entities,l:'Entities / Returns'}, {n:fmtMoney(totalFees),l:'Annual Fees (book)'}, {n:fmtMoney(Math.round(totalFees/REL.length)),l:'Avg Fees / Client'}, {n:attn.length,l:'Need Attention'} ];
@@ -455,17 +528,28 @@ function bindEmail(){
   const sb=$('sendBtn'); if(sb) sb.onclick=()=>{ const m=$('sendMsg'); if(m) m.textContent='✓ Demo only — in production this queues an individual, tracked send to each recipient via Resend Broadcasts.'; };
 }
 
-function openRecord(id){ state.from=state.view; state.selected=id; state.view='record'; render(); }
+function openRecord(id){ state.section='legacy'; state.from=state.view; state.selected=id; state.view='record'; render(); }
 
+const SECTIONS={ ground:{label:'Groundwork', tabs:[['dashboard','Dashboard'],['pipeline','Pipeline']]}, legacy:{label:'Legacy Builder', tabs:[['dashboard','Dashboard'],['clients','Clients'],['email','Email & Marketing']]} };
+function renderNav(){
+  $('secsw').innerHTML=Object.entries(SECTIONS).map(([k,v])=>`<button data-sec="${k}" class="${state.section===k?'on':''}">${v.label}</button>`).join('');
+  $('tabs').innerHTML=SECTIONS[state.section].tabs.map(([v,l])=>`<button class="tab ${state.view===v?'on':''}" data-view="${v}">${l}</button>`).join('');
+  $('secsw').querySelectorAll('button').forEach(b=>b.onclick=()=>{ state.section=b.dataset.sec; state.view='dashboard'; render(); });
+  $('tabs').querySelectorAll('.tab').forEach(t=>t.onclick=()=>{ state.view=t.dataset.view; render(); });
+}
 function render(){
-  $('wrap').innerHTML = state.view==='dashboard'?viewDashboard() : state.view==='clients'?viewClients() : state.view==='email'?viewEmail() : viewRecord();
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.view===state.view));
+  let html;
+  if(state.section==='ground'){ html = state.view==='pipeline'?viewPipeline():viewSalesDashboard(); }
+  else { html = state.view==='dashboard'?viewDashboard() : state.view==='clients'?viewClients() : state.view==='email'?viewEmail() : viewRecord(); }
+  $('wrap').innerHTML = html;
+  renderNav();
   document.querySelectorAll('[data-open]').forEach(el=>el.onclick=()=>openRecord(+el.dataset.open));
   const s=$('search'); if(s){ s.oninput=e=>{ state.query=e.target.value; render(); }; s.focus(); s.setSelectionRange(s.value.length,s.value.length); }
   const b=$('back'); if(b) b.onclick=()=>{ state.view=state.from||'clients'; render(); };
   if(state.view==='email') bindEmail();
 }
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{ state.view=t.dataset.view; render(); });
+if(location.hash==='#legacy') state.section='legacy';
+if(location.hash==='#ground') state.section='ground';
 render();
 </script>
 </body>
