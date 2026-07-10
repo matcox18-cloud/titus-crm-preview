@@ -319,6 +319,15 @@ function daysUntil(d){ return Math.round((d-TODAY)/86400000); }
 function nextBirthday(b){ let y=TODAY.getFullYear(); let d=new Date(y,b.m-1,b.d); if(d<TODAY) d=new Date(y+1,b.m-1,b.d); return d; }
 function fmtMD(d){ return MONTHS[d.getMonth()]+' '+d.getDate(); }
 
+function viewGroundwork(){
+  return `
+    <div style="display:flex;align-items:center;gap:10px;margin:-4px 0 10px;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:700;color:#2f7d4f;background:#e8f4ec;border:1px solid #bfe1cc;border-radius:20px;padding:3px 10px">LIVE</span>
+      <span style="font-size:12.5px;color:var(--muted)"><b style="color:var(--navy)">Groundwork</b> is the real Lead Tracker at <b style="color:var(--navy)">leads.tituscpa.com</b> — sign in with your 6-digit code. This is live data.</span>
+      <a href="https://leads.tituscpa.com/" target="_blank" rel="noopener" class="btn ghost" style="margin-left:auto;text-decoration:none">Open full-screen ↗</a>
+    </div>
+    <iframe src="https://leads.tituscpa.com/" title="Titus Lead Tracker (live)" style="width:100%;height:calc(100vh - 128px);border:1px solid var(--line);border-radius:12px;background:#fff;display:block"></iframe>`;
+}
 function viewSalesDashboard(){
   const open = LEADS.filter(l=>l.stage!=='Closed Won');
   const openVal = open.reduce((a,l)=>a+l.value,0);
@@ -530,16 +539,16 @@ function bindEmail(){
 
 function openRecord(id){ state.section='legacy'; state.from=state.view; state.selected=id; state.view='record'; render(); }
 
-const SECTIONS={ ground:{label:'Groundwork', tabs:[['dashboard','Dashboard'],['pipeline','Pipeline']]}, legacy:{label:'Legacy Builder', tabs:[['dashboard','Dashboard'],['clients','Clients'],['email','Email & Marketing']]} };
+const SECTIONS={ ground:{label:'Groundwork', tabs:[]}, legacy:{label:'Legacy Builder', tabs:[['dashboard','Dashboard'],['clients','Clients'],['email','Email & Marketing']]} };
 function renderNav(){
   $('secsw').innerHTML=Object.entries(SECTIONS).map(([k,v])=>`<button data-sec="${k}" class="${state.section===k?'on':''}">${v.label}</button>`).join('');
   $('tabs').innerHTML=SECTIONS[state.section].tabs.map(([v,l])=>`<button class="tab ${state.view===v?'on':''}" data-view="${v}">${l}</button>`).join('');
-  $('secsw').querySelectorAll('button').forEach(b=>b.onclick=()=>{ state.section=b.dataset.sec; state.view='dashboard'; render(); });
+  $('secsw').querySelectorAll('button').forEach(b=>b.onclick=()=>{ state.section=b.dataset.sec; state.view=(SECTIONS[state.section].tabs[0]||['dashboard'])[0]; render(); });
   $('tabs').querySelectorAll('.tab').forEach(t=>t.onclick=()=>{ state.view=t.dataset.view; render(); });
 }
 function render(){
   let html;
-  if(state.section==='ground'){ html = state.view==='pipeline'?viewPipeline():viewSalesDashboard(); }
+  if(state.section==='ground'){ html = viewGroundwork(); }
   else { html = state.view==='dashboard'?viewDashboard() : state.view==='clients'?viewClients() : state.view==='email'?viewEmail() : viewRecord(); }
   $('wrap').innerHTML = html;
   renderNav();
@@ -550,6 +559,7 @@ function render(){
 }
 if(location.hash==='#legacy') state.section='legacy';
 if(location.hash==='#ground') state.section='ground';
+state.view=(SECTIONS[state.section].tabs[0]||['dashboard'])[0];
 render();
 </script>
 </body>
