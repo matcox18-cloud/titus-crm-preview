@@ -123,6 +123,35 @@
   .lcard .val{ color:var(--green); font-weight:700; font-size:12.5px; }
   .due{ font-size:11px; color:var(--muted); } .due.over{ color:#c0392b; font-weight:700; }
   .miniava{ width:20px; height:20px; border-radius:50%; background:var(--navy); color:#fff; font-size:9px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; }
+  /* --- clients row list + family grouping toggle --- */
+  .seg{ display:inline-flex; gap:2px; background:#efe9db; border:1px solid var(--line); border-radius:20px; padding:3px; }
+  .seg button{ background:none; border:none; font-size:12.5px; font-weight:700; color:var(--muted); padding:5px 14px; border-radius:20px; cursor:pointer; }
+  .seg button.on{ background:#fff; color:var(--navy); box-shadow:0 1px 3px rgba(19,43,73,.10); }
+  .clist{ width:100%; }
+  .clist th{ background:#faf7ef; }
+  .clist tbody tr[data-open]{ cursor:pointer; }
+  .clist tbody tr[data-open]:hover td{ background:#faf7ef; }
+  .clist .grp td{ background:#f6f2e9; border-top:2px solid var(--line); padding-top:10px; padding-bottom:10px; }
+  .clist .gname{ font-family:Georgia,serif; font-weight:700; color:var(--navy); font-size:14px; }
+  .clist .fam{ color:var(--muted); font-size:12.5px; }
+  /* --- simple 3-step email flow --- */
+  .step{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:14px; }
+  .step-h{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .snum{ width:26px; height:26px; border-radius:50%; background:var(--navy); color:#fff; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; flex:none; }
+  .step-h h3{ font-size:15.5px; color:var(--navy); margin:0; }
+  .step-h .sh{ font-size:12px; color:var(--muted); margin-left:auto; }
+  .audrow{ display:flex; flex-wrap:wrap; gap:8px; }
+  .aud{ border:1px solid var(--line); background:#fff; border-radius:10px; padding:9px 15px; font-size:13px; font-weight:600; color:var(--navy); cursor:pointer; }
+  .aud:hover{ border-color:var(--gold); }
+  .aud.on{ background:var(--navy); color:#fff; border-color:var(--navy); }
+  .recip{ display:flex; align-items:baseline; gap:9px; margin-top:14px; }
+  .recip .big2{ font-family:Georgia,serif; font-size:30px; font-weight:700; color:var(--navy); line-height:1; }
+  .msgrow{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; }
+  .msg{ border:1px solid var(--line); background:#fff; border-radius:12px; padding:14px; cursor:pointer; transition:border-color .12s, box-shadow .12s; }
+  .msg:hover{ border-color:#cdbf9a; }
+  .msg.on{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(209,175,68,.28); }
+  .msg .mt2{ font-weight:700; color:var(--navy); font-size:14px; }
+  .msg .md{ font-size:12px; color:var(--muted); margin-top:3px; }
 </style>
 </head>
 <body>
@@ -307,12 +336,21 @@ const BROADCASTS=[
   {name:"Welcome — New Clients",audience:"Onboarded (3)",date:"Jun 15, 2026",sent:3,open:"92%",click:"55%"}
 ];
 
+const EMAIL_PRESETS=[
+  {l:'All clients', f:{tier:'',portal:'',service:''}},
+  {l:'Tier I', f:{tier:'I',portal:'',service:''}},
+  {l:'Tier II', f:{tier:'II',portal:'',service:''}},
+  {l:'Individuals', f:{tier:'III',portal:'',service:''}},
+  {l:'Uses CAS', f:{tier:'',portal:'',service:'CAS'}},
+  {l:'Portal: not set up', f:{tier:'',portal:'None',service:''}}
+];
+const TPL_SUBJECT={ Newsletter:'The Bottom Line · Issue No. 01 · July 2026', Announcement:'An update from Titus CPAs', 'Check-in':'Just checking in' };
 const OWNERS = ["Mat Cox","Sam Bellman","Hudson Pitts"];
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const initials = s => s.replace(/^Dr\.?\s+/,'').split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
 const fmtMoney = n => '$'+Number(n).toLocaleString();
 const $ = id => document.getElementById(id);
-let state = { section:'ground', view:'dashboard', from:'dashboard', selected:null, query:'', email:{ tier:'', portal:'', service:'', template:'Newsletter', subject:'The Bottom Line · Issue No. 01 · July 2026' } };
+let state = { section:'ground', view:'dashboard', from:'dashboard', selected:null, query:'', clientsGroup:'flat', email:{ tier:'', portal:'', service:'', template:'Newsletter', subject:'The Bottom Line · Issue No. 01 · July 2026' } };
 
 function parseD(s){ return new Date(s); }
 function daysUntil(d){ return Math.round((d-TODAY)/86400000); }
@@ -393,18 +431,32 @@ function viewDashboard(){
 
 function viewClients(){
   const q=state.query.trim().toLowerCase();
-  const rows=REL.filter(r=>{ if(!q) return true; const hay=(r.name+' '+r.owner+' '+r.contact.name+' '+r.entities.map(e=>e.name).join(' ')).toLowerCase(); return hay.includes(q); });
-  const cards=rows.map(r=>`
-    <div class="ccard" data-open="${r.id}">
-      <div class="ct"><div class="av lg ${r.owner==='Mat Cox'?'gold':''}">${initials(r.contact.name)}</div>
-        <div style="flex:1"><div class="nm">${r.name}</div><div class="sub">${r.contact.name} · ${r.industry}</div></div>
-        <span class="hd ${r.health}" title="Health"></span></div>
-      <div class="stats"><div class="st"><div class="v">${fmtMoney(r.fees)}</div><div class="l">Annual fees</div></div><div class="st"><div class="v">${r.entities.length}</div><div class="l">Entities</div></div><div class="st"><div class="v">${r.revenue}</div><div class="l">Revenue</div></div></div>
-      <div class="foot"><span class="tier ${r.tier}">Tier ${r.tier}</span><span class="chip">${r.owner.split(' ')[0]}</span><span class="chip">Portal: ${r.portal==='None'?'—':r.portal}</span><span class="open">Open record →</span></div>
-    </div>`).join('') || `<div class="hint">No matches.</div>`;
-  return `<h2 class="page serif">Clients</h2><p class="psub">Every client is a relationship — owner, entities, and family together. Click a card to open the full record.</p>
-    <input class="search" id="search" placeholder="Search clients, owners, entities…" value="${state.query.replace(/"/g,'&quot;')}" />
-    <div class="cards">${cards}</div>`;
+  const matches=r=>{ if(!q) return true; const hay=(r.name+' '+r.owner+' '+r.contact.name+' '+r.industry+' '+r.entities.map(e=>e.name+' '+e.type).join(' ')).toLowerCase(); return hay.includes(q); };
+  const list=REL.filter(matches);
+  const grouped=state.clientsGroup==='family';
+  const dot=h=>`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${h==='green'?'#2f9e74':'#d1a63a'};margin-right:7px;vertical-align:middle" title="Health"></span>`;
+  const tb=t=>`<span class="tier ${t}">Tier ${t}</span>`;
+  const first=n=>n.split(' ')[0];
+  const toolbar=`<div style="display:flex;align-items:center;gap:12px;margin:0 0 14px;flex-wrap:wrap">
+      <input class="search" id="search" placeholder="Search clients, owners, entities…" value="${state.query.replace(/"/g,'&quot;')}" style="margin:0;flex:1;min-width:220px;max-width:none" />
+      <div class="seg"><button data-cg="flat" class="${!grouped?'on':''}">Rows</button><button data-cg="family" class="${grouped?'on':''}">By family</button></div>
+    </div>`;
+  let table;
+  if(grouped){
+    const body=list.map(r=>{
+      const head=`<tr class="grp" data-open="${r.id}"><td colspan="5"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="gname">${dot(r.health)}${r.name}</span>${tb(r.tier)}<span class="fam">${r.contact.name} · ${r.industry}</span><span style="margin-left:auto;color:var(--muted);font-size:12px">${r.entities.length} entities · ${fmtMoney(r.fees)}/yr · ${first(r.owner)} · Portal: ${r.portal==='None'?'—':r.portal}</span></div></td></tr>`;
+      const kids=r.entities.map(e=>`<tr data-open="${r.id}"><td style="padding-left:28px;font-weight:600;color:var(--navy)">${e.name}</td><td>${e.type}</td><td class="fam">${e.note||''}</td><td>${first(r.owner)}</td><td style="text-align:right"><span class="open" style="margin:0">Open →</span></td></tr>`).join('');
+      return head+kids;
+    }).join('')||`<tr><td colspan="5"><div class="hint" style="padding:10px">No matches.</div></td></tr>`;
+    table=`<table class="tbl clist"><thead><tr><th>Client / return</th><th>Type</th><th>Detail</th><th>Mgr</th><th></th></tr></thead><tbody>${body}</tbody></table>`;
+  } else {
+    const erows=[]; list.forEach(r=>r.entities.forEach(e=>erows.push({r,e})));
+    const body=erows.map(({r,e})=>`<tr data-open="${r.id}"><td style="font-weight:600;color:var(--navy)">${e.name}</td><td>${e.type}</td><td>${dot(r.health)}${r.name}</td><td>${first(r.owner)}</td><td>${tb(r.tier)}</td><td style="text-align:right"><span class="open" style="margin:0">Open →</span></td></tr>`).join('')||`<tr><td colspan="6"><div class="hint" style="padding:10px">No matches.</div></td></tr>`;
+    table=`<table class="tbl clist"><thead><tr><th>Client / return</th><th>Type</th><th>Family grouping</th><th>Mgr</th><th>Tier</th><th></th></tr></thead><tbody>${body}</tbody></table>`;
+  }
+  return `<h2 class="page serif">Clients</h2><p class="psub">Every client is a relationship — owner, entities, and family together. ${grouped?'Grouped by family — ':''}click any row to open the full record.</p>
+    ${toolbar}
+    <div class="panel" style="padding:0;overflow:hidden">${table}</div>`;
 }
 
 function viewRecord(){
@@ -469,71 +521,46 @@ function viewRecord(){
 function emailMatches(){ const e=state.email; return REL.filter(r=> (!e.tier||r.tier===e.tier) && (!e.portal||r.portal===e.portal) && (!e.service||r.services.some(s=>s.toLowerCase().includes(e.service.toLowerCase()))) ); }
 function viewEmail(){
   const e=state.email, match=emailMatches(), tpl=TEMPLATES[e.template];
-  const tierOpts=['','I','II','III'].map(v=>`<option value="${v}" ${e.tier===v?'selected':''}>${v?'Tier '+v:'All tiers'}</option>`).join('');
-  const portalOpts=['','Active','Invited','None'].map(v=>`<option value="${v}" ${e.portal===v?'selected':''}>${v?('Portal: '+(v==='None'?'not set up':v)):'Any portal'}</option>`).join('');
-  const svcOpts=['','CAS','Business Tax','Personal 1040','Advisory','Estate & Trust','Construction'].map(v=>`<option value="${v}" ${e.service===v?'selected':''}>${v?('Uses: '+v):'Any service'}</option>`).join('');
-  const chips=match.map(r=>`<span class="chip">${r.contact.name.replace(/^Dr\.?\s+/,'')}</span>`).join('') || '<span class="hint">No clients match.</span>';
   const uniqEmails=[...new Set(match.map(r=>r.contact.email.toLowerCase()))]; const uniq=uniqEmails.length;
   const accounts=match.reduce((a,r)=>a+r.entities.length,0); const dupsPrevented=Math.max(accounts-uniq,0);
-  const saved=[ {l:'All clients'}, {l:'Tier I',tier:'I'}, {l:'Uses CAS',service:'CAS'}, {l:'Individuals',tier:'III'}, {l:'Portal not set up',portal:'None'} ];
-  const savedHTML=saved.map(s=>`<span class="savedchip" data-tier="${s.tier||''}" data-portal="${s.portal||''}" data-service="${s.service||''}">${s.l}</span>`).join('');
-  const tplOpts=Object.keys(TEMPLATES).map(k=>`<option ${e.template===k?'selected':''}>${k}</option>`).join('');
-  const kpiHTML=[ {n:REL.length,l:'Subscribers'}, {n:'74%',l:'Avg open rate'}, {n:'12',l:'Campaigns sent'}, {n:'3',l:'Active automations'} ].map(k=>`<div class="kpi"><div class="n">${k.n}</div><div class="l">${k.l}</div></div>`).join('');
-  const bHTML=BROADCASTS.map(b=>`<tr><td style="font-weight:600;color:var(--navy)">${b.name}</td><td>${b.audience}</td><td>${b.date}</td><td>${b.sent}</td><td>${b.open}</td><td>${b.click}</td></tr>`).join('');
-  const autos=[ {n:'Welcome sequence',d:'New clients get a 3-email intro over their first two weeks',on:true}, {n:'Quarterly check-in',d:'A light "how are things?" nudge from the relationship owner',on:true}, {n:'Post-filing thank-you',d:'Sent automatically after a return is delivered',on:false}, {n:'Birthday greeting',d:'A warm note on each contact\'s birthday',on:true} ];
-  const autoHTML=autos.map(a=>`<div class="auto"><div class="sw ${a.on?'on':''}"></div><div><div class="an">${a.n}</div><div class="ad">${a.d}</div></div></div>`).join('');
+  const audHTML=EMAIL_PRESETS.map((p,i)=>{ const on=p.f.tier===e.tier&&p.f.portal===e.portal&&p.f.service===e.service; return `<button class="aud ${on?'on':''}" data-aud="${i}">${p.l}</button>`; }).join('');
+  const msgs=[ {k:'Newsletter',t:'The Bottom Line — Issue 01',d:'The full branded client newsletter'}, {k:'Announcement',t:'Announcement',d:'A short firm-wide update'}, {k:'Check-in',t:'Personal check-in',d:'A warm, one-to-one style note'} ];
+  const msgHTML=msgs.map(m=>`<div class="msg ${e.template===m.k?'on':''}" data-tpl="${m.k}"><div class="mt2">${m.t}</div><div class="md">${m.d}</div></div>`).join('');
   const simpleMail=`<div class="mail"><div class="mh"><div class="b">TITUS <span>CPAs</span></div></div><div class="mb"><div class="mt">${tpl.title}</div><p>Hi <b>{{First name}}</b>,</p><p>${tpl.body}</p><a class="cta">${tpl.cta}</a></div>
           <div class="mf">Titus CPAs · 3100 Independence Dr, Suite 100, Birmingham, AL 35209<br>You're receiving this as a client of Titus CPAs. <a>Unsubscribe</a> · Sent individually — recipients never see each other.</div></div>`;
   const newsletterPreview=`<div style="border:1px solid #e3e0d8;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 6px 20px rgba(19,43,73,.10)">
           <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:#f3f1ea;border-bottom:1px solid #e3e0d8">
             <span style="width:9px;height:9px;border-radius:50%;background:#e6635a"></span><span style="width:9px;height:9px;border-radius:50%;background:#e6b34a"></span><span style="width:9px;height:9px;border-radius:50%;background:#5db075"></span>
-            <span style="margin-left:8px;font-size:11px;color:#6b7280">The Bottom Line · Issue No. 01 · rendered from your actual newsletter file</span>
+            <span style="margin-left:8px;font-size:11px;color:#6b7280">The Bottom Line · Issue No. 01 · your actual newsletter file</span>
           </div>
-          <iframe src="newsletter-bottom-line-jul2026.html" title="The Bottom Line newsletter" style="width:100%;height:560px;border:0;display:block;background:#fff"></iframe>
-        </div>
-        <div style="font-size:11px;color:var(--muted);margin-top:6px">↑ Scroll inside the frame to read the whole issue. This is <b>newsletter-bottom-line-jul2026.html</b> — the same file that goes out to each recipient individually.</div>`;
+          <iframe src="newsletter-bottom-line-jul2026.html" title="The Bottom Line newsletter" style="width:100%;height:520px;border:0;display:block;background:#fff"></iframe>
+        </div>`;
   const previewHTML = e.template==='Newsletter' ? newsletterPreview : simpleMail;
+  const bHTML=BROADCASTS.map(b=>`<tr><td style="font-weight:600;color:var(--navy)">${b.name}</td><td>${b.audience}</td><td>${b.date}</td><td>${b.sent}</td><td>${b.open}</td><td>${b.click}</td></tr>`).join('');
   return `
-    <h2 class="page serif">Email &amp; Newsletters</h2><p class="psub">Segment your clients and reach them with branded, compliant email — powered by your relationship data.</p>
-    <div class="kpis">${kpiHTML}</div>
-    <div class="email-grid">
-      <div class="panel">
-        <div class="ph"><h3>Build an audience</h3><span class="hint">Live from client data</span></div>
-        <div class="seg-filters"><select id="segTier" data-k="tier">${tierOpts}</select><select id="segPortal" data-k="portal">${portalOpts}</select><select id="segService" data-k="service">${svcOpts}</select></div>
-        <div class="box" style="text-align:center;padding:16px"><div class="count-big">${uniq}</div><div class="hint">unique ${uniq===1?'recipient':'recipients'} · deduplicated by email</div>
-          ${dupsPrevented>0?`<div style="font-size:11.5px;color:var(--green);margin-top:4px">✓ ${match.length} relationships / ${accounts} accounts → ${uniq} unique — ${dupsPrevented} duplicate ${dupsPrevented===1?'send':'sends'} prevented</div>`:`<div style="font-size:11.5px;color:var(--muted);margin-top:4px">${match.length} relationship${match.length===1?'':'s'} · no duplicates</div>`}
-          <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:12px">${chips}</div></div>
-        <div style="margin-top:12px"><div class="hint" style="margin-bottom:6px">Saved segments</div><div class="saved">${savedHTML}</div></div>
-      </div>
-      <div class="panel">
-        <div class="ph"><h3>Compose</h3><span class="hint">Branded template</span></div>
-        <div class="field" style="margin-bottom:10px"><label>Subject</label><input id="subjInput" value="${e.subject.replace(/"/g,'&quot;')}" /></div>
-        <div class="field" style="margin-bottom:14px"><label>Template</label><select id="tplSel">${tplOpts}</select></div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Preview · Subject: <b id="subjLine">${e.subject||'(no subject)'}</b></div>
-        ${previewHTML}
-        <div style="display:flex;gap:8px;margin-top:14px;align-items:center;flex-wrap:wrap"><button class="btn gold" id="sendBtn">Send to ${uniq} recipient${uniq===1?'':'s'}</button><button class="btn ghost">Schedule</button></div>
-        <div id="sendMsg" style="font-size:12px;color:var(--green);margin-top:8px;min-height:14px"></div>
-      </div>
+    <h2 class="page serif">Email &amp; Marketing</h2><p class="psub">Send a branded email to your clients in three steps. The tricky parts — individual sends, unsubscribe, de-duplication — are handled for you.</p>
+    <div class="step">
+      <div class="step-h"><span class="snum">1</span><h3>Who's it going to?</h3><span class="sh">deduplicated by email</span></div>
+      <div class="audrow">${audHTML}</div>
+      <div class="recip"><span class="big2">${uniq}</span><span class="hint">${uniq===1?'person':'people'} will receive this${dupsPrevented>0?` &nbsp;·&nbsp; <span style="color:var(--green);font-weight:600">${dupsPrevented} duplicate ${dupsPrevented===1?'send':'sends'} prevented</span> (one client, one email)`:''}</span></div>
     </div>
-    <div class="panel"><div class="ph"><h3>Recent broadcasts</h3><span class="hint">Opens · clicks</span></div><table class="tbl"><thead><tr><th>Campaign</th><th>Audience</th><th>Sent</th><th>Recipients</th><th>Open</th><th>Click</th></tr></thead><tbody>${bHTML}</tbody></table></div>
-    <div class="email-grid">
-      <div class="panel"><div class="ph"><h3>Automations</h3><span class="hint">Set-and-forget cadences</span></div>${autoHTML}</div>
-      <div class="panel"><div class="ph"><h3>Deliverability &amp; compliance</h3><span class="hint">Built in</span></div>
-        <div style="font-size:13px;color:#3f4751;line-height:1.7">
-          <div>✓ <b>De-duplicated by email</b> — a client never gets the same message twice, even if their address is on multiple accounts or entities (their personal 1040 and their business).</div>
-          <div>✓ One-click <b>unsubscribe</b> + firm mailing address on every send (CAN-SPAM).</div>
-          <div>✓ Emails sent <b>individually</b> — clients never see each other's addresses.</div>
-          <div>✓ Sends from <b>tituscpa.com</b> (SPF/DKIM verified) via Resend Broadcasts.</div>
-          <div>✓ Unsubscribes are honored automatically and skipped on future sends.</div>
-        </div></div>
-    </div>`;
+    <div class="step">
+      <div class="step-h"><span class="snum">2</span><h3>What are you sending?</h3></div>
+      <div class="msgrow">${msgHTML}</div>
+      <div class="field" style="margin-top:14px"><label>Subject line</label><input id="subjInput" value="${e.subject.replace(/"/g,'&quot;')}" /></div>
+    </div>
+    <div class="step">
+      <div class="step-h"><span class="snum">3</span><h3>Preview &amp; send</h3><span class="sh">Subject: <b id="subjLine">${e.subject||'(no subject)'}</b></span></div>
+      ${previewHTML}
+      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:16px"><button class="btn gold" id="sendBtn" style="font-size:15px;padding:12px 22px">Send to ${uniq} recipient${uniq===1?'':'s'}</button><span class="hint">✓ Sent individually · unsubscribe + address included · from tituscpa.com</span></div>
+      <div id="sendMsg" style="font-size:12px;color:var(--green);margin-top:10px;min-height:14px"></div>
+    </div>
+    <div class="panel"><div class="ph"><h3>Recent sends</h3><span class="hint">opens · clicks</span></div><table class="tbl"><thead><tr><th>Campaign</th><th>Audience</th><th>Sent</th><th>Recipients</th><th>Open</th><th>Click</th></tr></thead><tbody>${bHTML}</tbody></table></div>`;
 }
 function bindEmail(){
-  ['segTier','segPortal','segService'].forEach(id=>{ const el=$(id); if(el) el.onchange=()=>{ state.email[el.dataset.k]=el.value; render(); }; });
-  const tpl=$('tplSel'); if(tpl) tpl.onchange=()=>{ state.email.template=tpl.value; render(); };
+  document.querySelectorAll('[data-aud]').forEach(b=>b.onclick=()=>{ const p=EMAIL_PRESETS[+b.dataset.aud].f; state.email.tier=p.tier; state.email.portal=p.portal; state.email.service=p.service; render(); });
+  document.querySelectorAll('[data-tpl]').forEach(b=>b.onclick=()=>{ state.email.template=b.dataset.tpl; state.email.subject=TPL_SUBJECT[b.dataset.tpl]; render(); });
   const subj=$('subjInput'); if(subj){ subj.oninput=()=>{ state.email.subject=subj.value; const s=$('subjLine'); if(s) s.textContent=subj.value||'(no subject)'; }; }
-  document.querySelectorAll('.savedchip').forEach(c=>c.onclick=()=>{ state.email.tier=c.dataset.tier; state.email.portal=c.dataset.portal; state.email.service=c.dataset.service; render(); });
-  document.querySelectorAll('.sw').forEach(s=>s.onclick=()=>s.classList.toggle('on'));
   const sb=$('sendBtn'); if(sb) sb.onclick=()=>{ const m=$('sendMsg'); if(m) m.textContent='✓ Demo only — in production this queues an individual, tracked send to each recipient via Resend Broadcasts.'; };
 }
 
@@ -553,6 +580,7 @@ function render(){
   $('wrap').innerHTML = html;
   renderNav();
   document.querySelectorAll('[data-open]').forEach(el=>el.onclick=()=>openRecord(+el.dataset.open));
+  document.querySelectorAll('[data-cg]').forEach(el=>el.onclick=(ev)=>{ ev.stopPropagation(); state.clientsGroup=el.dataset.cg; render(); });
   const s=$('search'); if(s){ s.oninput=e=>{ state.query=e.target.value; render(); }; s.focus(); s.setSelectionRange(s.value.length,s.value.length); }
   const b=$('back'); if(b) b.onclick=()=>{ state.view=state.from||'clients'; render(); };
   if(state.view==='email') bindEmail();
