@@ -134,6 +134,16 @@
   .clist .grp td{ background:#f6f2e9; border-top:2px solid var(--line); padding-top:10px; padding-bottom:10px; }
   .clist .gname{ font-family:Georgia,serif; font-weight:700; color:var(--navy); font-size:14px; }
   .clist .fam{ color:var(--muted); font-size:12.5px; }
+  /* --- de-dupe explainer --- */
+  .dedupe{ margin-top:12px; border:1px solid var(--line); border-radius:10px; background:#faf7ef; }
+  .dedupe summary{ cursor:pointer; padding:10px 14px; font-size:12.5px; font-weight:700; color:var(--navy); list-style:none; }
+  .dedupe summary::-webkit-details-marker{ display:none; }
+  .dedupe summary:before{ content:'▸'; margin-right:8px; color:var(--gold-deep); }
+  .dedupe[open] summary:before{ content:'▾'; }
+  .dedupe .dd-body{ padding:0 16px 14px; font-size:13px; color:#3f4751; line-height:1.6; }
+  .dedupe .dd-body ul{ margin:8px 0; padding-left:18px; }
+  .dedupe .dd-body li{ margin:3px 0; }
+  .dedupe .dd-foot{ margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); color:var(--muted); }
   /* --- simple 3-step email flow --- */
   .step{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:14px; }
   .step-h{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
@@ -336,14 +346,14 @@ const BROADCASTS=[
   {name:"Welcome — New Clients",audience:"Onboarded (3)",date:"Jun 15, 2026",sent:3,open:"92%",click:"55%"}
 ];
 
-const EMAIL_PRESETS=[
-  {l:'All clients', f:{tier:'',portal:'',service:''}},
-  {l:'Tier I', f:{tier:'I',portal:'',service:''}},
-  {l:'Tier II', f:{tier:'II',portal:'',service:''}},
-  {l:'Individuals', f:{tier:'III',portal:'',service:''}},
-  {l:'Uses CAS', f:{tier:'',portal:'',service:'CAS'}},
-  {l:'Portal: not set up', f:{tier:'',portal:'None',service:''}}
+const AUD_FILTERS=[
+  {l:'Tier I', k:'tier', v:'I'},
+  {l:'Tier II', k:'tier', v:'II'},
+  {l:'Tier III', k:'tier', v:'III'},
+  {l:'Uses CAS', k:'service', v:'CAS'},
+  {l:'Portal: not set up', k:'portal', v:'None'}
 ];
+const MY_EMAIL='matcox18@gmail.com';
 const TPL_SUBJECT={ Newsletter:'The Bottom Line · Issue No. 01 · July 2026', Announcement:'An update from Titus CPAs', 'Check-in':'Just checking in' };
 const OWNERS = ["Mat Cox","Sam Bellman","Hudson Pitts"];
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -444,7 +454,7 @@ function viewClients(){
   let table;
   if(grouped){
     const body=list.map(r=>{
-      const head=`<tr class="grp" data-open="${r.id}"><td colspan="5"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="gname">${dot(r.health)}${r.name}</span>${tb(r.tier)}<span class="fam">${r.contact.name} · ${r.industry}</span><span style="margin-left:auto;color:var(--muted);font-size:12px">${r.entities.length} entities · ${fmtMoney(r.fees)}/yr · ${first(r.owner)} · Portal: ${r.portal==='None'?'—':r.portal}</span></div></td></tr>`;
+      const head=`<tr class="grp" data-open="${r.id}"><td colspan="5"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="gname">${dot(r.health)}${r.name}</span>${tb(r.tier)}<span class="fam">${r.contact.name} · ${r.industry}</span><span style="margin-left:auto;color:var(--muted);font-size:12px">${r.entities.length} entities · ${fmtMoney(r.fees)}/yr · ${first(r.owner)} · Portal: ${r.portal==='None'?'—':r.portal}</span><span class="open" style="margin:0">Open family →</span></div></td></tr>`;
       const kids=r.entities.map(e=>`<tr data-open="${r.id}"><td style="padding-left:28px;font-weight:600;color:var(--navy)">${e.name}</td><td>${e.type}</td><td class="fam">${e.note||''}</td><td>${first(r.owner)}</td><td style="text-align:right"><span class="open" style="margin:0">Open →</span></td></tr>`).join('');
       return head+kids;
     }).join('')||`<tr><td colspan="5"><div class="hint" style="padding:10px">No matches.</div></td></tr>`;
@@ -523,7 +533,12 @@ function viewEmail(){
   const e=state.email, match=emailMatches(), tpl=TEMPLATES[e.template];
   const uniqEmails=[...new Set(match.map(r=>r.contact.email.toLowerCase()))]; const uniq=uniqEmails.length;
   const accounts=match.reduce((a,r)=>a+r.entities.length,0); const dupsPrevented=Math.max(accounts-uniq,0);
-  const audHTML=EMAIL_PRESETS.map((p,i)=>{ const on=p.f.tier===e.tier&&p.f.portal===e.portal&&p.f.service===e.service; return `<button class="aud ${on?'on':''}" data-aud="${i}">${p.l}</button>`; }).join('');
+  const allOn=!e.tier&&!e.portal&&!e.service;
+  const audHTML=`<button class="aud ${allOn?'on':''}" data-aud="all">All clients</button>`+AUD_FILTERS.map((f,i)=>{ const on=e[f.k]===f.v; return `<button class="aud ${on?'on':''}" data-aud="${i}">${f.l}</button>`; }).join('');
+  const fparts=[]; if(e.tier)fparts.push('Tier '+e.tier); if(e.service)fparts.push('uses '+e.service); if(e.portal)fparts.push('portal '+(e.portal==='None'?'not set up':e.portal));
+  const filterDesc=fparts.length?fparts.join(' + '):'All clients';
+  const dupRows=match.filter(r=>r.entities.length>1).map(r=>`<li><b>${r.contact.name.replace(/^Dr\.?\s+/,'')}</b> — ${r.entities.length} accounts (${r.entities.map(x=>x.type).join(', ')}) → <b>1 email</b></li>`).join('');
+  const dedupeDetail=dupsPrevented>0?`<details class="dedupe"><summary>Why ${uniq} and not ${accounts}? See how de-duplication works</summary><div class="dd-body"><p>Several clients have more than one entity or return with the firm. Each person still gets <b>exactly one</b> email:</p><ul>${dupRows}</ul><p class="dd-foot">${accounts} accounts across ${match.length} client${match.length===1?'':'s'} → <b>${uniq} unique inbox${uniq===1?'':'es'}</b> · ${dupsPrevented} duplicate ${dupsPrevented===1?'send':'sends'} prevented.</p></div></details>`:'';
   const msgs=[ {k:'Newsletter',t:'The Bottom Line — Issue 01',d:'The full branded client newsletter'}, {k:'Announcement',t:'Announcement',d:'A short firm-wide update'}, {k:'Check-in',t:'Personal check-in',d:'A warm, one-to-one style note'} ];
   const msgHTML=msgs.map(m=>`<div class="msg ${e.template===m.k?'on':''}" data-tpl="${m.k}"><div class="mt2">${m.t}</div><div class="md">${m.d}</div></div>`).join('');
   const simpleMail=`<div class="mail"><div class="mh"><div class="b">TITUS <span>CPAs</span></div></div><div class="mb"><div class="mt">${tpl.title}</div><p>Hi <b>{{First name}}</b>,</p><p>${tpl.body}</p><a class="cta">${tpl.cta}</a></div>
@@ -542,7 +557,9 @@ function viewEmail(){
     <div class="step">
       <div class="step-h"><span class="snum">1</span><h3>Who's it going to?</h3><span class="sh">deduplicated by email</span></div>
       <div class="audrow">${audHTML}</div>
+      <div class="hint" style="margin:2px 0 8px">Pick one or combine several — filters stack. Sending to: <b style="color:var(--navy)">${filterDesc}</b></div>
       <div class="recip"><span class="big2">${uniq}</span><span class="hint">${uniq===1?'person':'people'} will receive this${dupsPrevented>0?` &nbsp;·&nbsp; <span style="color:var(--green);font-weight:600">${dupsPrevented} duplicate ${dupsPrevented===1?'send':'sends'} prevented</span> (one client, one email)`:''}</span></div>
+      ${dedupeDetail}
     </div>
     <div class="step">
       <div class="step-h"><span class="snum">2</span><h3>What are you sending?</h3></div>
@@ -552,15 +569,17 @@ function viewEmail(){
     <div class="step">
       <div class="step-h"><span class="snum">3</span><h3>Preview &amp; send</h3><span class="sh">Subject: <b id="subjLine">${e.subject||'(no subject)'}</b></span></div>
       ${previewHTML}
-      <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:16px"><button class="btn gold" id="sendBtn" style="font-size:15px;padding:12px 22px">Send to ${uniq} recipient${uniq===1?'':'s'}</button><span class="hint">✓ Sent individually · unsubscribe + address included · from tituscpa.com</span></div>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:16px"><button class="btn ghost" id="testBtn">Send test to myself</button><button class="btn gold" id="sendBtn" style="font-size:15px;padding:12px 22px">Send to ${uniq} recipient${uniq===1?'':'s'}</button><span class="hint">✓ Sent individually · unsubscribe + address included · from tituscpa.com</span></div>
+      <div class="hint" style="margin-top:8px">Always send a test to yourself first — it's the same email your clients get, so you can proof it in a real inbox before it goes out.</div>
       <div id="sendMsg" style="font-size:12px;color:var(--green);margin-top:10px;min-height:14px"></div>
     </div>
     <div class="panel"><div class="ph"><h3>Recent sends</h3><span class="hint">opens · clicks</span></div><table class="tbl"><thead><tr><th>Campaign</th><th>Audience</th><th>Sent</th><th>Recipients</th><th>Open</th><th>Click</th></tr></thead><tbody>${bHTML}</tbody></table></div>`;
 }
 function bindEmail(){
-  document.querySelectorAll('[data-aud]').forEach(b=>b.onclick=()=>{ const p=EMAIL_PRESETS[+b.dataset.aud].f; state.email.tier=p.tier; state.email.portal=p.portal; state.email.service=p.service; render(); });
+  document.querySelectorAll('[data-aud]').forEach(b=>b.onclick=()=>{ const d=b.dataset.aud; if(d==='all'){ state.email.tier=''; state.email.portal=''; state.email.service=''; } else { const f=AUD_FILTERS[+d]; state.email[f.k]=(state.email[f.k]===f.v)?'':f.v; } render(); });
   document.querySelectorAll('[data-tpl]').forEach(b=>b.onclick=()=>{ state.email.template=b.dataset.tpl; state.email.subject=TPL_SUBJECT[b.dataset.tpl]; render(); });
   const subj=$('subjInput'); if(subj){ subj.oninput=()=>{ state.email.subject=subj.value; const s=$('subjLine'); if(s) s.textContent=subj.value||'(no subject)'; }; }
+  const tb=$('testBtn'); if(tb) tb.onclick=()=>{ const m=$('sendMsg'); if(m) m.textContent='✓ Test sent to '+MY_EMAIL+' — proof it in your own inbox before sending to clients. (Demo)'; };
   const sb=$('sendBtn'); if(sb) sb.onclick=()=>{ const m=$('sendMsg'); if(m) m.textContent='✓ Demo only — in production this queues an individual, tracked send to each recipient via Resend Broadcasts.'; };
 }
 
