@@ -182,6 +182,9 @@
   .mf-bar{ display:flex; align-items:center; gap:6px; padding:8px 12px; background:#f3f1ea; border-bottom:1px solid #e3e0d8; }
   .mf-bar span.d1,.mf-bar span.d2,.mf-bar span.d3{ width:9px; height:9px; border-radius:50%; }
   .mf-bar .d1{ background:#e6635a; } .mf-bar .d2{ background:#e6b34a; } .mf-bar .d3{ background:#5db075; }
+  /* Groundwork frame full-screen */
+  #gwFrame:fullscreen{ width:100vw; height:100vh; border:0; border-radius:0; }
+  #gwFrame.gw-max{ position:fixed; inset:0; width:100vw; height:100vh; z-index:99999; border:0; border-radius:0; }
 </style>
 </head>
 <body>
@@ -414,10 +417,11 @@ function viewGroundwork(){
   return `
     <div style="display:flex;align-items:center;gap:10px;margin:-4px 0 10px;flex-wrap:wrap">
       <span style="font-size:11px;font-weight:700;color:#2f7d4f;background:#e8f4ec;border:1px solid #bfe1cc;border-radius:20px;padding:3px 10px">LIVE</span>
-      <span style="font-size:12.5px;color:var(--muted)"><b style="color:var(--navy)">Groundwork</b> is the real Lead Tracker at <b style="color:var(--navy)">leads.tituscpa.com</b> — sign in with your 6-digit code. This is live data.</span>
-      <a href="https://leads.tituscpa.com/" target="_blank" rel="noopener" class="btn ghost" style="margin-left:auto;text-decoration:none">Open full-screen ↗</a>
+      <span style="font-size:12.5px;color:var(--muted)"><b style="color:var(--navy)">Groundwork</b> is the real Lead Tracker at <b style="color:var(--navy)">leads.tituscpa.com</b> — sign in once with your 6-digit code. This is live data.</span>
+      <button type="button" class="btn ghost" style="margin-left:auto" onclick="gwFullscreen()">Expand full-screen ⤢</button>
     </div>
-    <iframe src="https://leads.tituscpa.com/" title="Titus Lead Tracker (live)" style="width:100%;height:calc(100vh - 128px);border:1px solid var(--line);border-radius:12px;background:#fff;display:block"></iframe>`;
+    <iframe id="gwFrame" src="https://leads.tituscpa.com/" title="Titus Lead Tracker (live)" allowfullscreen allow="fullscreen" style="width:100%;height:calc(100vh - 128px);border:1px solid var(--line);border-radius:12px;background:#fff;display:block"></iframe>
+    <div class="hint" style="margin-top:6px">Full-screen keeps you signed in — same session, no second code. Press <b>Esc</b> to exit.</div>`;
 }
 function viewSalesDashboard(){
   const open = LEADS.filter(l=>l.stage!=='Closed Won');
@@ -672,6 +676,19 @@ function bindEmail(){
   const sb=$('sendBtn'); if(sb) sb.onclick=()=>{ const m=$('sendMsg'); if(m) m.textContent='✓ Demo only — in production this queues an individual, tracked send to each recipient via Resend Broadcasts.'; };
 }
 
+function gwFullscreen(){
+  const f=document.getElementById('gwFrame'); if(!f) return;
+  // Fullscreen the SAME already-signed-in frame — no new tab, no second login code.
+  const req=f.requestFullscreen||f.webkitRequestFullscreen||f.msRequestFullscreen;
+  if(req){ try{ const p=req.call(f); if(p&&p.catch) p.catch(()=>gwMaxToggle(f)); return; }catch(e){} }
+  gwMaxToggle(f); // fallback: fill the viewport in-page (still the same session)
+}
+function gwMaxToggle(f){
+  const on=f.classList.toggle('gw-max');
+  let x=document.getElementById('gwExit');
+  if(on&&!x){ x=document.createElement('button'); x.id='gwExit'; x.className='btn'; x.textContent='Exit full-screen ✕'; x.style.cssText='position:fixed;top:14px;right:16px;z-index:100000'; x.onclick=()=>gwMaxToggle(f); document.body.appendChild(x); }
+  else if(!on&&x){ x.remove(); }
+}
 function openRecord(id){ state.section='legacy'; state.from=state.view; state.selected=id; state.view='record'; render(); }
 
 const SECTIONS={ ground:{label:'Groundwork', tabs:[]}, legacy:{label:'Legacy Builder', tabs:[['dashboard','Dashboard'],['clients','Clients'],['email','Email & Marketing']]} };
