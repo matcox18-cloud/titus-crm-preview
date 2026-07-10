@@ -162,6 +162,26 @@
   .msg.on{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(209,175,68,.28); }
   .msg .mt2{ font-weight:700; color:var(--navy); font-size:14px; }
   .msg .md{ font-size:12px; color:var(--muted); margin-top:3px; }
+  .msg5{ grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); }
+  /* --- in-page editor + import --- */
+  .editor{ margin-top:12px; border:1px solid var(--line); background:#fbf9f3; border-radius:12px; padding:16px 18px; }
+  .editor .ed-h{ font-weight:700; color:var(--navy); font-size:14px; margin-bottom:12px; }
+  .editor .ed-h2{ font-weight:700; color:var(--navy); font-size:12px; text-transform:uppercase; letter-spacing:.4px; margin:14px 0 6px; }
+  .ed-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .editor .field{ margin-bottom:12px; }
+  .editor label{ display:block; font-size:11.5px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px; }
+  .editor input, .editor textarea{ width:100%; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font:inherit; font-size:13.5px; color:var(--navy); background:#fff; box-sizing:border-box; }
+  .editor textarea{ resize:vertical; line-height:1.5; }
+  .ed-sec{ border:1px solid var(--line); border-radius:9px; padding:10px; margin-bottom:8px; background:#fff; }
+  .ed-secrow{ display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+  .ed-secrow input{ flex:1; }
+  .ed-del{ border:none; background:#f1e9d6; color:var(--gold-deep); border-radius:7px; width:30px; height:30px; cursor:pointer; font-size:13px; flex:none; }
+  .ed-del:hover{ background:#e9dcbb; }
+  @media(max-width:640px){ .ed-grid{ grid-template-columns:1fr; } }
+  .mail-frame{ border:1px solid #e3e0d8; border-radius:10px; overflow:hidden; background:#fff; box-shadow:0 6px 20px rgba(19,43,73,.10); }
+  .mf-bar{ display:flex; align-items:center; gap:6px; padding:8px 12px; background:#f3f1ea; border-bottom:1px solid #e3e0d8; }
+  .mf-bar span.d1,.mf-bar span.d2,.mf-bar span.d3{ width:9px; height:9px; border-radius:50%; }
+  .mf-bar .d1{ background:#e6635a; } .mf-bar .d2{ background:#e6b34a; } .mf-bar .d3{ background:#5db075; }
 </style>
 </head>
 <body>
@@ -354,13 +374,36 @@ const AUD_FILTERS=[
   {l:'Portal: not set up', k:'portal', v:'None'}
 ];
 const MY_EMAIL='matcox18@gmail.com';
-const TPL_SUBJECT={ Newsletter:'The Bottom Line · Issue No. 01 · July 2026', Announcement:'An update from Titus CPAs', 'Check-in':'Just checking in' };
+const TPL_SUBJECT={ Newsletter:'The Bottom Line · Issue No. 01 · July 2026', Announcement:'An update from Titus CPAs', 'Check-in':'Just checking in', Custom:'', Imported:'' };
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+// Editable content model for each branded email (guided fields). Newsletter is pre-loaded with Issue 01.
+const DOCS={
+  Newsletter:{issue:'Dispatches from the Titus Team · Issue No. 01 · July 2026', title:'July is for Independence', intro:"Nobody ever felt independent because of a great spreadsheet. But independence isn't the absence of obligation — it's having built something sturdy enough to stand on its own.\n\nJuly is the exact midpoint of the year: the most honest month to look up, read the numbers without flinching, and adjust while there's still runway.", sections:[ {h:'TikTok Tax Tips',b:'The G-Wagon write-off verdict: yes, it can qualify under Section 179 — but only with genuine business use and the records to prove it.'}, {h:'Did You Know',b:'The modern income tax dates to 1913 — the 16th Amendment is older than most family businesses.'}, {h:'Meet the Team',b:'Hudson Pitts leads the tax practice and heads up onboarding for new business clients.'}, {h:'Save the Date',b:'Client Appreciation Day — November 1, 2026.'} ], ctaText:"Questions? We're here.", ctaEmail:'support@tituscpa.com'},
+  Announcement:{issue:'A note from Titus CPAs', title:'An update for our clients', intro:"We're writing to share an important update that affects your account. Please take a moment to review — and as always, reach out with any questions.", sections:[], ctaText:'Learn more', ctaEmail:'support@tituscpa.com'},
+  'Check-in':{issue:'', title:'Just checking in', intro:"It's been a little while since we last connected. We'd love to hear how things are going and make sure we're doing everything we can to support you and your goals.", sections:[], ctaText:'Schedule a call', ctaEmail:'support@tituscpa.com'},
+  Custom:{issue:'', title:'', intro:'', sections:[], ctaText:'', ctaEmail:'support@tituscpa.com'}
+};
+function renderEmailDoc(d){
+  const intro=(d.intro||'').split(/\n{2,}/).map(p=>p.trim()).filter(Boolean).map(p=>`<p style="margin:0 0 12px;font-size:14.5px;line-height:1.7;color:#2b2b2b">${esc(p).replace(/\n/g,'<br>')}</p>`).join('')||'<p style="color:#9aa0a6;font-size:14px">Add an intro…</p>';
+  const secs=(d.sections||[]).filter(s=>(s.h||s.b)).map(s=>`<tr><td style="padding:16px 30px 0"><div style="font-family:Georgia,serif;font-size:17px;color:#132b49;font-weight:700;margin-bottom:5px">${esc(s.h)}</div><div style="font-size:14px;line-height:1.65;color:#3f4751">${esc(s.b).replace(/\n/g,'<br>')}</div></td></tr>`).join('');
+  const cta=d.ctaText?`<tr><td style="padding:22px 30px 4px"><a href="#" style="display:inline-block;background:#d1af44;color:#132b49;font-weight:700;text-decoration:none;padding:11px 22px;border-radius:8px;font-size:14px">${esc(d.ctaText)}</a></td></tr>`:'';
+  return `<div style="max-width:640px;margin:0 auto;background:#fff;border:1px solid #e3e0d8;border-radius:12px;overflow:hidden;font-family:Arial,Helvetica,sans-serif">
+    <div style="background:#132b49;color:#fff;text-align:center;padding:26px 24px">
+      <div style="font-family:Georgia,serif;letter-spacing:1px;font-size:20px">TITUS <span style="color:#d1af44">CPAs</span></div>
+      ${d.title?`<div style="font-family:Georgia,serif;font-size:30px;line-height:1.15;margin-top:12px">${esc(d.title)}</div>`:''}
+      ${d.issue?`<div style="color:#d1af44;font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;margin-top:10px">${esc(d.issue)}</div>`:''}
+      <div style="font-style:italic;color:#cdd6e2;font-size:13px;margin-top:12px">We bring the structure. You build the legacy.</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse"><tr><td style="padding:24px 30px 0">${intro}</td></tr>${secs}${cta}</table>
+    <div style="background:#f6f2e9;color:#6b7280;font-size:11.5px;line-height:1.6;text-align:center;padding:18px 24px;border-top:1px solid #e3e0d8">Titus CPAs · 3100 Independence Dr, Suite 100, Birmingham, AL 35209 · (205) 870-3158<br>You're receiving this as a client of Titus CPAs. <a href="#" style="color:#6b7280">Unsubscribe</a> · Sent individually — recipients never see each other.${d.ctaEmail?`<br>Reply anytime: <a href="#" style="color:#6b7280">${esc(d.ctaEmail)}</a>`:''}</div>
+  </div>`;
+}
 const OWNERS = ["Mat Cox","Sam Bellman","Hudson Pitts"];
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const initials = s => s.replace(/^Dr\.?\s+/,'').split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
 const fmtMoney = n => '$'+Number(n).toLocaleString();
 const $ = id => document.getElementById(id);
-let state = { section:'ground', view:'dashboard', from:'dashboard', selected:null, query:'', clientsGroup:'flat', email:{ tier:'', portal:'', service:'', template:'Newsletter', subject:'The Bottom Line · Issue No. 01 · July 2026' } };
+let state = { section:'ground', view:'dashboard', from:'dashboard', selected:null, query:'', clientsGroup:'flat', email:{ tier:'', portal:'', service:'', template:'Newsletter', subject:'The Bottom Line · Issue No. 01 · July 2026', editing:false, docs:JSON.parse(JSON.stringify(DOCS)), imported:null } };
 
 function parseD(s){ return new Date(s); }
 function daysUntil(d){ return Math.round((d-TODAY)/86400000); }
@@ -539,18 +582,49 @@ function viewEmail(){
   const filterDesc=fparts.length?fparts.join(' + '):'All clients';
   const dupRows=match.filter(r=>r.entities.length>1).map(r=>`<li><b>${r.contact.name.replace(/^Dr\.?\s+/,'')}</b> — ${r.entities.length} accounts (${r.entities.map(x=>x.type).join(', ')}) → <b>1 email</b></li>`).join('');
   const dedupeDetail=dupsPrevented>0?`<details class="dedupe"><summary>Why ${uniq} and not ${accounts}? See how de-duplication works</summary><div class="dd-body"><p>Several clients have more than one entity or return with the firm. Each person still gets <b>exactly one</b> email:</p><ul>${dupRows}</ul><p class="dd-foot">${accounts} accounts across ${match.length} client${match.length===1?'':'s'} → <b>${uniq} unique inbox${uniq===1?'':'es'}</b> · ${dupsPrevented} duplicate ${dupsPrevented===1?'send':'sends'} prevented.</p></div></details>`:'';
-  const msgs=[ {k:'Newsletter',t:'The Bottom Line — Issue 01',d:'The full branded client newsletter'}, {k:'Announcement',t:'Announcement',d:'A short firm-wide update'}, {k:'Check-in',t:'Personal check-in',d:'A warm, one-to-one style note'} ];
-  const msgHTML=msgs.map(m=>`<div class="msg ${e.template===m.k?'on':''}" data-tpl="${m.k}"><div class="mt2">${m.t}</div><div class="md">${m.d}</div></div>`).join('');
-  const simpleMail=`<div class="mail"><div class="mh"><div class="b">TITUS <span>CPAs</span></div></div><div class="mb"><div class="mt">${tpl.title}</div><p>Hi <b>{{First name}}</b>,</p><p>${tpl.body}</p><a class="cta">${tpl.cta}</a></div>
-          <div class="mf">Titus CPAs · 3100 Independence Dr, Suite 100, Birmingham, AL 35209<br>You're receiving this as a client of Titus CPAs. <a>Unsubscribe</a> · Sent individually — recipients never see each other.</div></div>`;
-  const newsletterPreview=`<div style="border:1px solid #e3e0d8;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 6px 20px rgba(19,43,73,.10)">
-          <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:#f3f1ea;border-bottom:1px solid #e3e0d8">
-            <span style="width:9px;height:9px;border-radius:50%;background:#e6635a"></span><span style="width:9px;height:9px;border-radius:50%;background:#e6b34a"></span><span style="width:9px;height:9px;border-radius:50%;background:#5db075"></span>
-            <span style="margin-left:8px;font-size:11px;color:#6b7280">The Bottom Line · Issue No. 01 · your actual newsletter file</span>
-          </div>
-          <iframe src="newsletter-bottom-line-jul2026.html" title="The Bottom Line newsletter" style="width:100%;height:520px;border:0;display:block;background:#fff"></iframe>
-        </div>`;
-  const previewHTML = e.template==='Newsletter' ? newsletterPreview : simpleMail;
+  const MSG_CARDS=[ {k:'Newsletter',t:'The Bottom Line — Issue 01',d:'Your branded client newsletter'}, {k:'Announcement',t:'Announcement',d:'A short firm-wide update'}, {k:'Check-in',t:'Personal check-in',d:'A warm, one-to-one note'}, {k:'Custom',t:'＋ New email',d:'Start from a blank branded template'}, {k:'Imported',t:'⇪ Import HTML',d:'Bring in your own designed email'} ];
+  const msgHTML=MSG_CARDS.map(m=>`<div class="msg ${e.template===m.k?'on':''}" data-tpl="${m.k}"><div class="mt2">${m.t}</div><div class="md">${m.d}</div></div>`).join('');
+  const doc=e.docs[e.template]||e.docs.Custom;
+  const isImport=e.template==='Imported';
+  // --- editor / import panel ---
+  let editorHTML='';
+  if(isImport){
+    const has=e.imported;
+    editorHTML=`<div class="editor">
+      <div class="ed-h">Import an email</div>
+      <p class="hint" style="margin:0 0 12px">Upload an <b>.html</b> file (like the newsletter) or paste HTML — it becomes a sendable email, previewed live below and de-duplicated the same way.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><label class="btn ghost" style="cursor:pointer;margin:0">Choose .html file<input type="file" id="impFile" accept=".html,.htm,text/html" style="display:none"></label>${has?`<span class="hint">Loaded: <b style="color:var(--navy)">${esc(e.imported.name)}</b></span><button class="btn ghost" id="impClear" style="padding:6px 12px">Remove</button>`:'<span class="hint">No file chosen yet</span>'}</div>
+      <div class="field"><label>…or paste HTML</label><textarea id="impPaste" rows="4" placeholder="<html>…your email…</html>">${has&&e.imported.name==='Pasted HTML'?esc(e.imported.html):''}</textarea></div>
+      <button class="btn ghost" id="impUse" style="margin-top:8px">Use pasted HTML</button>
+    </div>`;
+  } else {
+    const secRows=(doc.sections||[]).map((s,i)=>`<div class="ed-sec"><div class="ed-secrow"><input data-sec="${i}" data-f="h" value="${esc(s.h)}" placeholder="Section heading" /><button class="ed-del" data-delsec="${i}" title="Remove section">✕</button></div><textarea data-sec="${i}" data-f="b" rows="2" placeholder="Section text…">${esc(s.b)}</textarea></div>`).join('');
+    editorHTML=`<div class="editor" ${e.editing?'':'style="display:none"'}>
+      <div class="ed-h">Edit content <span class="hint" style="font-weight:400">— changes preview live, stays on-brand</span></div>
+      <div class="ed-grid">
+        <div class="field"><label>Eyebrow / issue line</label><input id="edIssue" value="${esc(doc.issue)}" placeholder="e.g. Issue No. 02 · August 2026" /></div>
+        <div class="field"><label>Headline</label><input id="edTitle" value="${esc(doc.title)}" placeholder="Your headline" /></div>
+      </div>
+      <div class="field"><label>Intro (blank line = new paragraph)</label><textarea id="edIntro" rows="4" placeholder="Opening message…">${esc(doc.intro)}</textarea></div>
+      <div class="ed-h2">Sections</div>
+      <div id="edSecs">${secRows||'<div class="hint">No sections yet.</div>'}</div>
+      <button class="btn ghost" id="edAddSec" style="margin:8px 0 4px;padding:6px 12px">＋ Add section</button>
+      <div class="ed-grid">
+        <div class="field"><label>Button label (optional)</label><input id="edCtaText" value="${esc(doc.ctaText)}" placeholder="e.g. Schedule a call" /></div>
+        <div class="field"><label>Reply-to email</label><input id="edCtaEmail" value="${esc(doc.ctaEmail)}" placeholder="support@tituscpa.com" /></div>
+      </div>
+    </div>`;
+  }
+  // --- preview ---
+  let previewHTML;
+  if(isImport){
+    previewHTML = e.imported ? `<div class="mail-frame"><div class="mf-bar"><span class="d1"></span><span class="d2"></span><span class="d3"></span><span style="margin-left:8px;font-size:11px;color:#6b7280">${esc(e.imported.name)} · imported</span></div><iframe title="Imported email" srcdoc="${esc(e.imported.html)}" style="width:100%;height:520px;border:0;display:block;background:#fff"></iframe></div>` : `<div class="panel" style="text-align:center;color:var(--muted);padding:40px">Import a file or paste HTML above to preview it here.</div>`;
+  } else if(e.template==='Newsletter' && !e.editing && JSON.stringify(doc)===JSON.stringify(DOCS.Newsletter)){
+    previewHTML = `<div class="mail-frame"><div class="mf-bar"><span class="d1"></span><span class="d2"></span><span class="d3"></span><span style="margin-left:8px;font-size:11px;color:#6b7280">The Bottom Line · Issue No. 01 · designed file</span><a href="newsletter-bottom-line-jul2026.html" target="_blank" style="margin-left:auto;font-size:11px;color:var(--gold-deep)">Open ↗</a></div><iframe src="newsletter-bottom-line-jul2026.html" title="The Bottom Line newsletter" style="width:100%;height:520px;border:0;display:block;background:#fff"></iframe></div>`;
+  } else {
+    previewHTML = `<div style="box-shadow:0 6px 20px rgba(19,43,73,.10);border-radius:12px">${renderEmailDoc(doc)}</div>`;
+  }
+  const editBtn = isImport ? '' : `<button class="btn ghost" id="editToggle">${e.editing?'✓ Done editing':'✎ Edit content'}</button>`;
   const bHTML=BROADCASTS.map(b=>`<tr><td style="font-weight:600;color:var(--navy)">${b.name}</td><td>${b.audience}</td><td>${b.date}</td><td>${b.sent}</td><td>${b.open}</td><td>${b.click}</td></tr>`).join('');
   return `
     <h2 class="page serif">Email &amp; Marketing</h2><p class="psub">Send a branded email to your clients in three steps. The tricky parts — individual sends, unsubscribe, de-duplication — are handled for you.</p>
@@ -562,13 +636,15 @@ function viewEmail(){
       ${dedupeDetail}
     </div>
     <div class="step">
-      <div class="step-h"><span class="snum">2</span><h3>What are you sending?</h3></div>
-      <div class="msgrow">${msgHTML}</div>
-      <div class="field" style="margin-top:14px"><label>Subject line</label><input id="subjInput" value="${e.subject.replace(/"/g,'&quot;')}" /></div>
+      <div class="step-h"><span class="snum">2</span><h3>What are you sending?</h3><span class="sh">edit any of these · or import your own</span></div>
+      <div class="msgrow msg5">${msgHTML}</div>
+      ${editBtn?`<div style="margin-top:12px">${editBtn}</div>`:''}
+      ${editorHTML}
+      <div class="field" style="margin-top:14px"><label>Subject line</label><input id="subjInput" value="${esc(e.subject)}" placeholder="What clients see in their inbox" /></div>
     </div>
     <div class="step">
       <div class="step-h"><span class="snum">3</span><h3>Preview &amp; send</h3><span class="sh">Subject: <b id="subjLine">${e.subject||'(no subject)'}</b></span></div>
-      ${previewHTML}
+      <div id="emailPreview">${previewHTML}</div>
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:16px"><button class="btn ghost" id="testBtn">Send test to myself</button><button class="btn gold" id="sendBtn" style="font-size:15px;padding:12px 22px">Send to ${uniq} recipient${uniq===1?'':'s'}</button><span class="hint">✓ Sent individually · unsubscribe + address included · from tituscpa.com</span></div>
       <div class="hint" style="margin-top:8px">Always send a test to yourself first — it's the same email your clients get, so you can proof it in a real inbox before it goes out.</div>
       <div id="sendMsg" style="font-size:12px;color:var(--green);margin-top:10px;min-height:14px"></div>
@@ -576,9 +652,22 @@ function viewEmail(){
     <div class="panel"><div class="ph"><h3>Recent sends</h3><span class="hint">opens · clicks</span></div><table class="tbl"><thead><tr><th>Campaign</th><th>Audience</th><th>Sent</th><th>Recipients</th><th>Open</th><th>Click</th></tr></thead><tbody>${bHTML}</tbody></table></div>`;
 }
 function bindEmail(){
-  document.querySelectorAll('[data-aud]').forEach(b=>b.onclick=()=>{ const d=b.dataset.aud; if(d==='all'){ state.email.tier=''; state.email.portal=''; state.email.service=''; } else { const f=AUD_FILTERS[+d]; state.email[f.k]=(state.email[f.k]===f.v)?'':f.v; } render(); });
-  document.querySelectorAll('[data-tpl]').forEach(b=>b.onclick=()=>{ state.email.template=b.dataset.tpl; state.email.subject=TPL_SUBJECT[b.dataset.tpl]; render(); });
-  const subj=$('subjInput'); if(subj){ subj.oninput=()=>{ state.email.subject=subj.value; const s=$('subjLine'); if(s) s.textContent=subj.value||'(no subject)'; }; }
+  const em=state.email; const doc=em.docs[em.template];
+  const refresh=()=>{ const p=$('emailPreview'); if(p&&doc) p.innerHTML=`<div style="box-shadow:0 6px 20px rgba(19,43,73,.10);border-radius:12px">${renderEmailDoc(doc)}</div>`; };
+  document.querySelectorAll('[data-aud]').forEach(b=>b.onclick=()=>{ const d=b.dataset.aud; if(d==='all'){ em.tier=''; em.portal=''; em.service=''; } else { const f=AUD_FILTERS[+d]; em[f.k]=(em[f.k]===f.v)?'':f.v; } render(); });
+  document.querySelectorAll('[data-tpl]').forEach(b=>b.onclick=()=>{ const k=b.dataset.tpl; em.template=k; const ns=TPL_SUBJECT[k]; if(ns) em.subject=ns; if(k==='Custom') em.editing=true; render(); });
+  const et=$('editToggle'); if(et) et.onclick=()=>{ em.editing=!em.editing; render(); };
+  // guided fields — live preview, no full re-render (keeps cursor focus)
+  const bindF=(id,key)=>{ const el=$(id); if(el) el.oninput=()=>{ doc[key]=el.value; refresh(); }; };
+  bindF('edIssue','issue'); bindF('edTitle','title'); bindF('edIntro','intro'); bindF('edCtaText','ctaText'); bindF('edCtaEmail','ctaEmail');
+  document.querySelectorAll('[data-sec]').forEach(el=>el.oninput=()=>{ doc.sections[+el.dataset.sec][el.dataset.f]=el.value; refresh(); });
+  const add=$('edAddSec'); if(add) add.onclick=()=>{ doc.sections.push({h:'',b:''}); render(); };
+  document.querySelectorAll('[data-delsec]').forEach(b=>b.onclick=()=>{ doc.sections.splice(+b.dataset.delsec,1); render(); });
+  // import
+  const impFile=$('impFile'); if(impFile) impFile.onchange=()=>{ const f=impFile.files&&impFile.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=()=>{ em.imported={name:f.name, html:String(rd.result)}; render(); }; rd.readAsText(f); };
+  const impUse=$('impUse'); if(impUse) impUse.onclick=()=>{ const v=$('impPaste')?$('impPaste').value:''; if(v.trim()){ em.imported={name:'Pasted HTML', html:v}; render(); } };
+  const impClear=$('impClear'); if(impClear) impClear.onclick=()=>{ em.imported=null; render(); };
+  const subj=$('subjInput'); if(subj){ subj.oninput=()=>{ em.subject=subj.value; const s=$('subjLine'); if(s) s.textContent=subj.value||'(no subject)'; }; }
   const tb=$('testBtn'); if(tb) tb.onclick=()=>{ const m=$('sendMsg'); if(m) m.textContent='✓ Test sent to '+MY_EMAIL+' — proof it in your own inbox before sending to clients. (Demo)'; };
   const sb=$('sendBtn'); if(sb) sb.onclick=()=>{ const m=$('sendMsg'); if(m) m.textContent='✓ Demo only — in production this queues an individual, tracked send to each recipient via Resend Broadcasts.'; };
 }
